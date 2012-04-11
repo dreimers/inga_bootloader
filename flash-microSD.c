@@ -1,25 +1,33 @@
-/* Copyright (c) 2010, Ulf Kulau
+/*
+ * Copyright (c) 2010, Institute of Operating Systems and Computer Networks (TU Brunswick).
+ * All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Institute nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * Author: Ulf Kulau <kulau@ibr.cs.tu-bs.de>
+ *         Christoph Peltz <peltz@ibr.cs.tu-bs.de>
  */
 
 /**
@@ -42,14 +50,7 @@
  */
 
 #include "flash-microSD.h"
-
-
-#define LED_1_ON()		PORTD &=~(1 << PD5)
-#define LED_2_ON()		PORTD &=~(1 << PD7)
-#define LED_1_OFF()		PORTD |= (1 << PD5)
-#define LED_2_OFF()		PORTD |= (1 << PD7)
-#define LED_1_TOGGLE()		PORTD ^= (1 << PD5);
-#define LED_2_TOGGLE()		PORTD ^= (1 << PD7);
+#define DEBUG 1
 /**
  * \brief The number of bytes in one block on the SD-Card.
  */
@@ -70,11 +71,11 @@ uint8_t microSD_sdsc_card = 1;
  */
 uint8_t microSD_crc_enable = 0;
 
-uint64_t microSD_get_card_size(void) {
+uint64_t microSD_get_card_size() {
 	return ((uint64_t) microSD_card_block_count) * microSD_block_size;
 }
 
-uint32_t microSD_get_block_num(void) {
+uint32_t microSD_get_block_num() {
 	return (microSD_card_block_count / microSD_block_size) * microSD_get_block_size();
 }
 
@@ -84,15 +85,15 @@ uint32_t microSD_get_block_num(void) {
  * Currently it's fixed at 512 Bytes.
  * \return Number of Bytes in one Block.
  */
-uint16_t microSD_get_block_size(void) {
+uint16_t microSD_get_block_size() {
 	return 512;
 }
 
-uint8_t microSD_is_SDSC(void) {
+uint8_t microSD_is_SDSC() {
 	return microSD_sdsc_card;
 }
 
-uint16_t microSD_get_status(void);
+uint16_t microSD_get_status();
 
 /**
  * Turns crc capabilities of the card on or off.
@@ -259,7 +260,6 @@ uint8_t microSD_init(void) {
 	for (i = 0; i < 16; i++) {
 		mspi_transceive(MSPI_DUMMY_BYTE);
 	}
-	
 	/*CMD0: set sd card to idle state*/
 	uint8_t cmd0[6]  = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x95 };
 	/*CMD1: init CSD Version 1 and MMC cards*/
@@ -354,25 +354,24 @@ uint8_t microSD_init(void) {
 		#endif
 		resp[0] = 0x01;
 		i = 0;
-		uint8_t j=0;
-		do{
-			while( microSD_write_cmd( cmd55, NULL ) != 0x01 ) {
-				i++;
-				if (i > 500) {
-					#ifdef DEBUG
-					printf("\nmicroSD_init(): acmd41 timeout reached, last return value was %u", ret);
-					#endif
-					mspi_chip_release(MICRO_SD_CS);
-					microSD_deinit();
-					return 6;
-				}
+		ACMD41:
+		while( microSD_write_cmd( cmd55, NULL ) != 0x01 ) {
+			i++;
+			if (i > 500) {
+				#ifdef DEBUG
+				printf("\nmicroSD_init(): acmd41 timeout reached, last return value was %u", ret);
+				#endif
+				mspi_chip_release(MICRO_SD_CS);
+				microSD_deinit();
+				return 6;
 			}
-			j++;
-			#ifdef DEBUG
-			printf("\nmicroSD_init():\tWriting cmd41");
-			#endif
-		}while( (microSD_write_cmd( cmd41, NULL ) != 0) &&  (j<10));
-		
+		}
+		#ifdef DEBUG
+		printf("\nmicroSD_init():\tWriting cmd41");
+		#endif
+		if( microSD_write_cmd( cmd41, NULL ) != 0 ) {
+			goto ACMD41;
+		}
 		resp[0] = 0x03;
 		i = 0;
 		#ifdef DEBUG
@@ -481,7 +480,7 @@ uint8_t microSD_deinit(void) {
 	return 0;
 }
 
-uint16_t microSD_get_status(void) {
+uint16_t microSD_get_status() {
 	uint8_t cmd[6] = { 0x4D, 0x00, 0x00, 0x00, 0x00, 0xFF };
 	uint8_t resp[5]  = { 0x02, 0x00, 0x00, 0x00, 0x00 };
 	if (microSD_write_cmd(cmd, resp) != 0x00) {
@@ -585,6 +584,7 @@ uint8_t microSD_write_cmd(uint8_t *cmd, uint8_t *resp) {
 		if (i > 500) {
 			break;
 		}
+		watchdog_periodic();
 		i++;
 		if( resp != NULL && data != 0xFF) {
 			if( resp_type == 0x01 ) {
