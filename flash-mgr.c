@@ -103,6 +103,51 @@ uint8_t page_write_uart( uint16_t size, uint8_t mem_type, uint32_t *address )
 	return '\r';
 }
 
+uint16_t page_write( uint16_t size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address )
+{
+	uint8_t rx_data;
+	uint32_t tmp_address;
+	uint16_t addr= ( *address ) &0xFFFF;
+	uint8_t *a_ptr = ( uint8_t * ) addr;
+
+	switch ( mem_type ) {
+	case 'E':
+
+		boot_spm_busy_wait();
+		for ( tmp_address = 0; tmp_address < size; tmp_address++ ) {
+			eeprom_write_byte ( a_ptr++, data_ptr[tmp_address]>>8 );
+			eeprom_write_byte ( a_ptr++, data_ptr[tmp_address] );
+		}
+		( *address ) += size;
+
+		break;
+
+	case 'F':
+
+		( *address ) <<= 1; // Convert address to bytes temporarily.
+		tmp_address = ( *address ); // Store address in page.
+		uint16_t i = 0;
+		uint16_t block_size = size;
+		uint16_t data;
+
+		for ( i = 0; i < PAGESIZE; i++ ) {
+
+			data = data_ptr[i];
+
+			boot_page_fill_safe ( address + (i<<1), data );
+		}
+		clear_local_buffer();
+
+		boot_page_write_safe ( address );
+
+		( *address ) += block_size;
+
+		( *address ) >>= 1;
+		break;
+	}
+	return size;
+}
+
 void clear_local_buffer ( void )
 {
 	uint16_t i;

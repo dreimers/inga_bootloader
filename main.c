@@ -25,6 +25,7 @@
 #include <util/delay.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/boot.h>
 
 #include "uart.h"
 #include "frq-calib.h"
@@ -33,7 +34,6 @@
 #include "update.h"
 #include "update_SD.h"
 #include "diskio.h"
-#include "fat.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -65,8 +65,6 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
-	struct diskio_device_info *info = 0;
-	struct FAT_Info fat;
 
 #ifdef BL
 	
@@ -125,9 +123,11 @@ int main ( void )
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
 	if( start_bootloader == 2){
-		info = diskio_devices();
-		uint8_t foo= fat_mount_device( info );
-		if( foo == 0){
+#if FORMAT
+		update_sd_format();
+#endif
+		uint8_t val_error =update_sd_validate(0);
+		if( val_error == 0){
 			uart_TXchar('i' );
 			uart_TXchar('i' );
 			uart_TXchar('i' );
@@ -137,7 +137,7 @@ int main ( void )
 			uart_TXchar('i' );
 			uart_TXchar('\n' );
 		}else{
-			uart_TXchar( ('0'+foo) );
+			uart_TXchar( ('0'+val_error) );
 			uart_TXchar('o' );
 			uart_TXchar('o' );
 			uart_TXchar('o' );

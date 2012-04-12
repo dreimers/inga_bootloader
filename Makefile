@@ -13,7 +13,8 @@ INCLUSDIRS=fat
 vpath %.c $(INCLUSDIRS)
 UPDATE_SRC= update_SD.c
 DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c
-SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) $(FATSRC)
+SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) 
+#$(FATSRC)
 ASRC = 
 OPT = s
 
@@ -43,7 +44,7 @@ CDEBUG = -g$(DEBUG)
 CWARN = -Wall -Wstrict-prototypes
 CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
-CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
+CFLAGS += $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 
 
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
@@ -83,7 +84,7 @@ EXTMEMOPTS =
 
 #LDMAP = $(LDFLAGS) -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB) 
-ifdef $(BL)
+ifeq ($(BL),1)
 CFLAGS += -DBL
 BOOTSTART = 0x1E000
 LDFLAGS += -Wl,--section-start=.text=$(BOOTSTART)
