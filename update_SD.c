@@ -16,11 +16,11 @@ uint8_t update_sd_validate (void)
 			if ( (buff[0] == MAGIC_NUM) &&\
 				(update.size == (buff[1]<<1) + buff[2]) &&\
 				(update.addr == (buff[3]<<3) + (buff[4]<<2) + (buff[5]<<1) +buff[6])){
-				return 0;
+				return 0; //success
 			}
 				
 				
 		}
 	}
-	return 1;
+	return 1; //failure
 }

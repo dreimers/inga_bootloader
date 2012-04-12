@@ -32,6 +32,8 @@
 #include "flash-microSD.h"
 #include "update.h"
 #include "update_SD.h"
+#include "diskio.h"
+#include "fat.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -63,7 +65,8 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
-
+	struct diskio_device_info *info = 0;
+	struct FAT_Info fat;
 
 #ifdef BL
 	
@@ -108,6 +111,9 @@ int main ( void )
 	if ( test == 0){
 		
 		LED_2_ON();
+		uart_TXchar('O' );
+		uart_TXchar('K' );
+		uart_TXchar('\n' );
 	}else{
 		uart_TXchar( ('0'+test) );
 		uart_TXchar('\n' );
@@ -119,7 +125,9 @@ int main ( void )
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
 	if( start_bootloader == 2){
-		if(update_sd_validate() == 0){
+		info = diskio_devices();
+		uint8_t foo= fat_mount_device( info );
+		if( foo == 0){
 			uart_TXchar('i' );
 			uart_TXchar('i' );
 			uart_TXchar('i' );
@@ -127,8 +135,9 @@ int main ( void )
 			uart_TXchar('i' );
 			uart_TXchar('i' );
 			uart_TXchar('i' );
-			uart_TXchar('\r' );
+			uart_TXchar('\n' );
 		}else{
+			uart_TXchar( ('0'+foo) );
 			uart_TXchar('o' );
 			uart_TXchar('o' );
 			uart_TXchar('o' );

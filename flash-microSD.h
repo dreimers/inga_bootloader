@@ -66,7 +66,7 @@
 #ifndef FLASH_MICROSD_H_
 #define FLASH_MICROSD_H_
 
-#include "../drv/mspi-drv.h"
+#include "mspi-drv.h"
 #include <stdio.h>
 #include <util/delay.h>
 
@@ -117,7 +117,7 @@ uint8_t microSD_read_csd( uint8_t *buffer );
  *
  * \return Number of bytes per block on the SD-Card
  */
-uint16_t microSD_get_block_size();
+uint16_t microSD_get_block_size(void);
 
 /**
  * \brief This function indicates if a card is a SDSC or SDHC/SDXC card.
@@ -127,7 +127,7 @@ uint16_t microSD_get_block_size();
  *
  * \return Not 0 if the card is SDSC and 0 if SDHC/SDXC
  */
-uint8_t microSD_is_SDSC();
+uint8_t microSD_is_SDSC(void);
 
 uint8_t microSD_deinit(void);
 
@@ -169,8 +169,8 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer);
 uint8_t microSD_write_cmd(uint8_t *cmd, uint8_t *resp );
 uint16_t microSD_data_crc( uint8_t *data );
 uint8_t microSD_set_CRC( uint8_t enable );
-uint64_t microSD_get_card_size();
-uint32_t microSD_get_block_num();
+uint64_t microSD_get_card_size(void);
+uint32_t microSD_get_block_num(void);
 
 
 
