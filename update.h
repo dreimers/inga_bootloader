@@ -1,6 +1,7 @@
 #ifndef __UPDATE_H__
 #define __UPDATE_H__
 
+#define INTERNAL_FLASH_SIZE 1000
 // // //
 typedef struct {
 	uint16_t size; // size in blocks

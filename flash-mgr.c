@@ -24,7 +24,7 @@
 
 #include "flash-mgr.h"
 
-void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address )
+void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address )
 {
 	uint16_t addr= ( *address ) &0xFFFF;
 	uint8_t *a_ptr = ( uint8_t * ) addr;
@@ -56,6 +56,37 @@ void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address )
 		break;
 	default:
 		uart_TXchar ( '?' );
+	}
+}
+void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *buff )
+{
+	uint16_t addr= ( *address ) &0xFFFF;
+	uint8_t *a_ptr = ( uint8_t * ) addr;
+	boot_spm_busy_wait();
+	switch ( mem_type ) {
+	case 'E':
+		do {
+			*buff= eeprom_read_byte ( a_ptr++ );
+			buff++;
+			( *address ) ++;
+			size--; // Decrease number of bytes to read
+		} while ( size ); // Repeat until all block has been read
+		break;
+	case 'F':
+		( *address ) <<= 1; // Convert address to bytes temporarily.
+		do {
+			uint32_t add_t;
+			add_t = ( *address );
+			*buff= pgm_read_byte_far ( add_t );
+			buff++;
+			*buff= pgm_read_byte_far ( ( add_t ) + 1 );
+			buff++;
+			( *address ) += 2; // Select next word in memory.
+			size -= 2; // Subtract two bytes from number of bytes to read
+		} while ( size ); // Repeat until all block has been read
+
+		( *address ) >>= 1; // Convert address back to Flash words again.
+		break;
 	}
 }
 

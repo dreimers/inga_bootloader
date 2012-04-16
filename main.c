@@ -225,7 +225,7 @@ int main ( void )
 			case 'g':
 				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
 				val = uart_RXchar(); // Get memtype
-				page_read ( temp_int, val, &address ); // Block read
+				page_read_uart ( temp_int, val, &address ); // Block read
 				break;
 			case 'p':
 				uart_TXchar ( 'S' );
