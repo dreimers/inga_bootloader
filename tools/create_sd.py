@@ -31,6 +31,9 @@ with open(sys.argv[1], "rb") as f:
 	for i in range(512-len(header)):
 		s="%c" % (0)
 		of.write(s)
+	for i in range(512):
+		s="%c" % (0)
+		of.write(s)
 	for i in range(len(byte_array)):
 		of.write(byte_array[i])
 		write_count+=1
