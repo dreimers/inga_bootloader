@@ -150,6 +150,7 @@ build:  hex
 
 elf: $(TARGET).elf
 hex: $(TARGET).hex
+bin: $(TARGET).bin
 eep: $(TARGET).eep
 lss: $(TARGET).lss 
 sym: $(TARGET).sym
@@ -178,10 +179,13 @@ extcoff: $(TARGET).elf
 	$(COFFCONVERT) -O coff-ext-avr $(TARGET).elf $(TARGET).cof
 
 
-.SUFFIXES: .elf .hex .eep .lss .sym
+.SUFFIXES: .elf .hex .eep .lss .sym .bin
 
 .elf.hex:
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
+
+.elf.bin:
+	$(OBJCOPY) -O binary -R .eeprom $< $@
 
 .elf.eep:
 	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
