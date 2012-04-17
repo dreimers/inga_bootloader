@@ -30,7 +30,7 @@ void update_sd_format (void)
 }
 #endif
 
-uint16_t udate_sd_backup (uint32_t header_addr, uint32_t backup_addr)
+uint16_t update_sd_backup (uint32_t header_addr, uint32_t backup_addr)
 {
 	update_t bk;
 	uint32_t i=0;
@@ -93,6 +93,9 @@ uint8_t update_sd_install (uint32_t header_addr)
 	uint32_t flash_addr = 0;
 	uint16_t buff[256];
 	uint16_t i = 0;
+#if BACKUP
+	update_sd_backup(512, update.addr + update.size*512);
+#endif
 	for (; i < update.size; i+=512) {
 		if (microSD_read_block (update.addr + i, buff) == 0) {
 			page_write (PAGESIZE, buff, 'F', &flash_addr);

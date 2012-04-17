@@ -66,6 +66,9 @@
  */
 #define AT45DB_CS 					1
 
+
+#define AT45DB_PAGES	4096
+#define AT45DB_PAGE_SIZE	512
 /*!
  * Status Register Address. Bit 7 signalizes if the device is
  * busy.

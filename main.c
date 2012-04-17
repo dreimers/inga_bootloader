@@ -31,9 +31,11 @@
 #include "frq-calib.h"
 #include "flash-mgr.h"
 #include "flash-microSD.h"
+#include "flash-at45db.h"
 #include "update.h"
 #include "update_SD.h"
 #include "diskio.h"
+#include "../../contiki/cpu/stm32w108/e_stdio/src/small_mprec.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -65,18 +67,27 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
+	at45db_init();
 
 #ifdef BL
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
 		MCUSR &=~ ( 1 << EXTRF );
-		MCUSR &=~ ( 1 << PORF );
+		MCUSR &=~s ( 1 << PORF );
 	}
 	//stay in bootloader conditions
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 1;
 	} else if (microSD_init() == 0) { // SD-card found
+#if UPDATE_EVERYTIME
 		start_bootloader = 2;
+#else
+		uint8_t update_flag=0;
+		at45db_read_page_bypassed(AT45DB_PAGES-1,0,&update_flag,1);
+		if(update_flag){
+			start_bootloader=2;
+		}
+#endif
 	} else if ( MCUSR & _BV ( EXTRF ) ) {
 		LED_2_ON();
 		tmp_SREG = SREG;
@@ -106,47 +117,15 @@ int main ( void )
 	//LED_2_OFF();
 #ifndef BL
 	uint8_t test=microSD_init();
-	if ( test == 0){
-		
-		LED_2_ON();
-		uart_TXchar('O' );
-		uart_TXchar('K' );
-		uart_TXchar('\n' );
-	}else{
-		uart_TXchar( ('0'+test) );
-		uart_TXchar('\n' );
-		
-		LED_1_ON();
-	}
 #endif
 	sei();
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
 	if( start_bootloader == 2){
-#if FORMAT
-		update_sd_format();
-#endif
 		uint8_t val_error =update_sd_validate(0);
 		if( val_error == 0){
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('i' );
-			uart_TXchar('\n' );
-		}else{
-			uart_TXchar( ('0'+val_error) );
-			uart_TXchar('o' );
-			uart_TXchar('o' );
-			uart_TXchar('o' );
-			uart_TXchar('o' );
-			uart_TXchar('o' );
-			uart_TXchar('o' );
-			uart_TXchar('\n' );
+			update_sd_install(0);
 		}
-		
 	} else if ( start_bootloader == 3 ){
 		while ( 1 ) {
 			//uart protocol
