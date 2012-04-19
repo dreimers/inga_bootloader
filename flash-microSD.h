@@ -166,7 +166,7 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer);
  *
  * \return R1 response byte or 0xFF in case of read/write timeout
  */
-uint8_t microSD_write_cmd(uint8_t *cmd, uint8_t *resp );
+uint8_t microSD_write_cmd(uint8_t const *cmd, uint8_t *resp );
 uint16_t microSD_data_crc( uint8_t *data );
 uint8_t microSD_set_CRC( uint8_t enable );
 uint64_t microSD_get_card_size(void);

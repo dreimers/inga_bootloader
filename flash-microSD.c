@@ -205,7 +205,7 @@ void microSD_setSDCInfo( uint8_t *csd ) {
  *	cmd array (at the correct position).
  */
 void microSD_cmd_crc( uint8_t *cmd ) {
-	uint32_t stream = (((uint32_t) cmd[0]) << 24) + (((uint32_t) cmd[1]) << 16) + (((uint32_t) cmd[2]) << 8) + ((uint32_t) cmd[3]);
+	uint32_t stream = (*((uint32_t*)&cmd[0]));
 	uint8_t i = 0;
 	uint32_t gen = ((uint32_t) 0x89) << 24;
 
@@ -269,19 +269,19 @@ uint8_t microSD_init(void) {
 		mspi_transceive(MSPI_DUMMY_BYTE);
 	}
 	/*CMD0: set sd card to idle state*/
-	uint8_t cmd0[6]  = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x95 };
+	static const uint8_t cmd0[6]  = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x95 };
 	/*CMD1: init CSD Version 1 and MMC cards*/
-	uint8_t cmd1[6]  = { 0x41, 0x00, 0x00, 0x00, 0x00, 0xFF };
+	static const uint8_t cmd1[6]  = { 0x41, 0x00, 0x00, 0x00, 0x00, 0xFF };
 	/*CMD8: Test if the card supports CSD Version 2*/
-	uint8_t cmd8[6]  = { 0x48, 0x00, 0x00, 0x01, 0xaa, 0x01 };
+	static const uint8_t cmd8[6]  = { 0x48, 0x00, 0x00, 0x01, 0xaa, 0x87 };
 	/*CMD16: Sets the block length, needed for CSD Version 1 cards*/
-	uint8_t cmd16[6] = { 0x50, 0x00, 0x00, 0x02, 0x00, 0x01 };
+	static const uint8_t cmd16[6] = { 0x50, 0x00, 0x00, 0x02, 0x00, 0x01 };
 	/*CMD41: Second part of ACMD41*/
-	uint8_t cmd41[6] = { 0x69, 0x40, 0x00, 0x00, 0x00, 0x01 };
+	static const uint8_t cmd41[6] = { 0x69, 0x40, 0x00, 0x00, 0x00, 0x01 };
 	/*CMD55: First part of ACMD41, Initiates a App. Spec. Cmd*/
-	uint8_t cmd55[6] = { 0x77, 0x00, 0x00, 0x00, 0x00, 0x01 };
+	static const uint8_t cmd55[6] = { 0x77, 0x00, 0x00, 0x00, 0x00, 0x01 };
 	/*CMD58: Gets the OCR-Register to check if card is SDSC or not*/
-	uint8_t cmd58[6] = { 0x7a, 0x00, 0x00, 0x00, 0x00, 0x01 };
+	static const uint8_t cmd58[6] = { 0x7a, 0x00, 0x00, 0x00, 0x00, 0x01 };
 	/*Response Array for the R3 and R7 responses*/
 	uint8_t resp[5]  = { 0x00, 0x00, 0x00, 0x00, 0x00 };
 	/*Memory for the contents of the csd*/
@@ -302,7 +302,7 @@ uint8_t microSD_init(void) {
 		}
 	}
 	/*send CMD8*/
-	microSD_cmd_crc( cmd8 );
+	//microSD_cmd_crc( cmd8 );
 	#if DEBUG
 	printf("\nmicroSD_init(): Writing cmd8");
 	#endif
@@ -442,10 +442,7 @@ uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above
 	 */
-	cmd[1] = ((addr & 0xFF000000) >> 24);
-	cmd[2] = ((addr & 0x00FF0000) >> 16);
-	cmd[3] = ((addr & 0x0000FF00) >> 8);
-	cmd[4] = ((addr & 0x000000FF));
+	*(uint32_t*)&cmd[1] = addr;
 
 	/* send CMD17 with address information. Chip select is done by
 	 * the microSD_write_cmd method and */
@@ -516,11 +513,13 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above
 	 */
+	*(uint32_t*)&cmd[1]=addr;
+	/*
 	cmd[1] = ((addr & 0xFF000000) >> 24);
 	cmd[2] = ((addr & 0x00FF0000) >> 16);
 	cmd[3] = ((addr & 0x0000FF00) >> 8);
 	cmd[4] = ((addr & 0x000000FF));
-
+	*/
 	//if( microSD_crc_enable ) {
 		//crc = microSD_data_crc( buffer );
 	//}
@@ -563,7 +562,7 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	return 0;
 }
 
-uint8_t microSD_write_cmd(uint8_t *cmd, uint8_t *resp) {
+uint8_t microSD_write_cmd(const uint8_t *cmd, uint8_t *resp) {
 	uint16_t i;
 	uint8_t data;
 	uint8_t idx = 0;
@@ -572,9 +571,10 @@ uint8_t microSD_write_cmd(uint8_t *cmd, uint8_t *resp) {
 	if( resp != NULL ) {
 		resp_type = resp[0];
 	}
+	/*
 	if( microSD_crc_enable ) {
 		microSD_cmd_crc( cmd );
-	}
+	}*/
 
 	mspi_chip_release(MICRO_SD_CS);
 	mspi_transceive(MSPI_DUMMY_BYTE);

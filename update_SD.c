@@ -29,7 +29,7 @@ void update_sd_format (void)
 
 }
 #endif
-
+#if BACKUP
 uint16_t update_sd_backup (uint32_t header_addr, uint32_t backup_addr)
 {
 	update_t bk;
@@ -54,27 +54,30 @@ uint16_t update_sd_backup (uint32_t header_addr, uint32_t backup_addr)
 	buff[5] = (bk.addr>>8)&0xff;
 	buff[6] = (bk.addr)&0xff;
 	//flags
+	bk.flags=1;
 	buff[7] = bk.flags;
 	//success_count
+	bk.success_count=0;
 	buff[8] = (bk.success_count>>8)&0xff;
 	buff[9] = (bk.success_count)&0xff;
 	microSD_write_block (header_addr, buff);
 	microSD_write_block ( ( (uint32_t) bk.size * 512) + bk.addr, buff);
 	
 }
+#endif
 uint8_t update_sd_validate (uint32_t header_addr)
 {
 	uint8_t buff[512];
 	if (microSD_read_block (header_addr, buff) == 0) {
 		if (buff[0] == MAGIC_NUM) {
-			update.size = ( (uint16_t) buff[1] << 8) + buff[2];
-			update.addr = ( (uint32_t) buff[3] << 24) + ( (uint32_t) buff[4] << 16) + ( (uint32_t) buff[5] << 8) + buff[6];
+			update.size = *((uint16_t*)&buff[1]);
+			update.addr = *((uint32_t*)&buff[3]);
 			update.flags = buff[7];
-			update.success_count = ((uint16_t)buff[8]<<8) + buff[9];
+			update.success_count = ((uint16_t)buff[8]<<8) | buff[9];
 			microSD_read_block ( ( (uint32_t) update.size * 512) + update.addr , buff);
 			if ( (buff[0] == MAGIC_NUM) && \
-			                (update.size == ( (uint16_t) buff[1] << 8) + buff[2]) && \
-			                (update.addr == ( (uint32_t) buff[3] << 24) + ( (uint32_t) buff[4] << 16) + ( (uint32_t) buff[5] << 8) + buff[6])) {
+			                (update.size == *((uint16_t*)&buff[1])) && \
+			                (update.addr == *((uint32_t*)&buff[3]))){
 				return 0; //success
 			} else {
 				return 3;
@@ -99,7 +102,7 @@ uint8_t update_sd_install (uint32_t header_addr)
 	for (; i < update.size; i+=512) {
 		if (microSD_read_block (update.addr + i, buff) == 0) {
 			page_write (PAGESIZE, buff, 'F', &flash_addr);
-			page_write (PAGESIZE, buff + PAGESIZE<<1, 'F', &flash_addr);
+			page_write (PAGESIZE, buff + PAGESIZE*2, 'F', &flash_addr);
 		} else {
 			break;
 		}
@@ -108,18 +111,13 @@ uint8_t update_sd_install (uint32_t header_addr)
 	memset(buff,0,512);
 	buff[0] = MAGIC_NUM;
 	//size
-	buff[1] = update.size>>8;
-	buff[2] = update.size&0xff;
+	*((uint16_t*)&buff[1]) = update.size;
 	//addr
-	buff[3] = (update.addr>>24)&0xff;
-	buff[4] = (update.addr>>16)&0xff;
-	buff[5] = (update.addr>>8)&0xff;
-	buff[6] = (update.addr)&0xff;
+	*((uint16_t*)&buff[3]) = update.addr;
 	//flags
 	buff[7] = update.flags;
 	//success_count
-	buff[8] = (update.success_count>>8)&0xff;
-	buff[9] = (update.success_count)&0xff;
+	*((uint16_t*)&buff[8]) = update.success_count;
 	microSD_write_block (header_addr, buff);
 	microSD_write_block ( ( (uint32_t) update.size * 512) + update.addr, buff);
 }

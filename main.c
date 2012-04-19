@@ -35,7 +35,6 @@
 #include "update.h"
 #include "update_SD.h"
 #include "diskio.h"
-#include "../../contiki/cpu/stm32w108/e_stdio/src/small_mprec.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -67,13 +66,17 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
+#if UPDATE_EVERYTIME
+	LED_2_OFF();
+#else
 	at45db_init();
+#endif
 
 #ifdef BL
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
 		MCUSR &=~ ( 1 << EXTRF );
-		MCUSR &=~s ( 1 << PORF );
+		MCUSR &=~ ( 1 << PORF );
 	}
 	//stay in bootloader conditions
 	if ( BUTTON_PRESSED() ) {
@@ -204,7 +207,7 @@ int main ( void )
 			case 'g':
 				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
 				val = uart_RXchar(); // Get memtype
-				page_read_uart ( temp_int, val, &address ); // Block read
+				page_read ( temp_int, val, &address ,0); // Block read
 				break;
 			case 'p':
 				uart_TXchar ( 'S' );
@@ -213,7 +216,7 @@ int main ( void )
 
 				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
 				val = uart_RXchar(); //mem type
-				uart_TXchar ( page_write_uart ( temp_int, val, &address ) ); // Block load.
+				uart_TXchar ( page_write ( temp_int,0, val, &address ) ); // Block load.
 
 				break;
 			case 'P':
