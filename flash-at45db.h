@@ -221,7 +221,7 @@ void at45db_erase_page(uint16_t addr);
  *        be written to the active buffer
  *
  */
-void at45db_write_buffer(uint16_t addr, uint8_t *buffer, uint16_t bytes);
+//void at45db_write_buffer(uint16_t addr, uint8_t *buffer, uint16_t bytes);
 
 /**
  * \brief This function copies the active buffer into the Flash
@@ -231,7 +231,7 @@ void at45db_write_buffer(uint16_t addr, uint8_t *buffer, uint16_t bytes);
  * \param addr page address e.g. AT45DB161 (0 ... 4095)
  *
  */
-void at45db_buffer_to_page(uint16_t addr);
+//void at45db_buffer_to_page(uint16_t addr);
 
 /**
  * \brief This function copies the data from the the pointer
@@ -258,7 +258,7 @@ void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16
  *        be read to the local byte buffer
  *
  */
-void at45db_read_page_buffered(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes);
+//void at45db_read_page_buffered(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes);
 
 /**
  * \brief Bytes can be read direct (bypassed) from a Flash EEPROM page. With this

@@ -102,7 +102,7 @@ void at45db_erase_page(uint16_t addr) {
 	at45db_busy_wait();
 	mspi_chip_release(AT45DB_CS);
 }
-
+#if 0
 void at45db_write_buffer(uint16_t addr, uint8_t *buffer, uint16_t bytes) {
 	uint16_t i;
 	/*block erase command consists of 4 byte*/
@@ -130,7 +130,7 @@ void at45db_buffer_to_page(uint16_t addr) {
 	 * while these buffer is copied to the Flash EEPROM page*/
 	buffer_mgr.active_buffer ^= 1;
 }
-
+#endif
 
 void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes) {
 	uint16_t i;
@@ -150,15 +150,15 @@ void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16
 	 * while these buffer is copied to the Flash EEPROM page*/
 	buffer_mgr.active_buffer ^= 1;
 }
-
-void at45db_read_page_buffered(uint16_t p_addr, uint16_t b_addr,
+#if 0
+void (uint16_t p_addr, uint16_t b_addr,
 		uint8_t *buffer, uint16_t bytes) {
 	/*wait until AT45DB161 is ready again*/
 	at45db_busy_wait();
 	at45db_page_to_buf(p_addr);
 	at45db_read_buffer(b_addr, buffer, bytes);
 }
-
+#endif
 void at45db_read_page_bypassed(uint16_t p_addr, uint16_t b_addr,
 		uint8_t *buffer, uint16_t bytes) {
 	uint16_t i;

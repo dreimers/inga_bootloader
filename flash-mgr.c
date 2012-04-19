@@ -181,7 +181,6 @@ uint16_t page_write( uint16_t size, uint16_t *data_ptr, uint8_t mem_type, uint32
 				local_buffer[i++] = uart_RXchar();
 				size -=1;
 			} while ( size ); // Loop until all bytes written.
-			( *address ) += block_size;
 
 			fill_page ( tmp_address );
 		}else{
@@ -195,8 +194,8 @@ uint16_t page_write( uint16_t size, uint16_t *data_ptr, uint8_t mem_type, uint32
 
 			boot_page_write_safe ( address );
 
-			( *address ) += block_size;
 		}
+		( *address ) += block_size;
 		( *address ) >>= 1;
 		break;
 	}

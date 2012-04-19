@@ -4,7 +4,7 @@
 #define INTERNAL_FLASH_SIZE 1000
 
 #define UPDATE_EVERYTIME 1
-#define BACKUP 0
+#define BACKUP 1
 // // //
 typedef struct {
 	uint16_t size; // size in blocks
