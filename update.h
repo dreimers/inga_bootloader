@@ -5,6 +5,7 @@
 
 #define UPDATE_EVERYTIME 1
 #define BACKUP 1
+#define BLi 1
 // // //
 typedef struct {
 	uint16_t size; // size in blocks
@@ -14,4 +15,5 @@ typedef struct {
 } update_t;
 
 extern update_t update;
+
 #endif

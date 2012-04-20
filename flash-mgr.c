@@ -21,8 +21,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#include <avr/io.h>
 #include "flash-mgr.h"
+#include "update.h"
 /*
 void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address )
 {
@@ -59,7 +60,7 @@ void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address )
 	}
 }
 */
-void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *buff )
+void page_read ( uint16_t *size, uint8_t mem_type, uint32_t *address, uint8_t *buff )
 {
 	uint16_t addr= ( *address ) &0xFFFF;
 	uint8_t *a_ptr = ( uint8_t * ) addr;
@@ -74,8 +75,8 @@ void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *bu
 				uart_TXchar ( eeprom_read_byte ( a_ptr++ ) );
 			}
 			( *address ) ++;
-			size--; // Decrease number of bytes to read
-		} while ( size ); // Repeat until all block has been read
+			*size--; // Decrease number of bytes to read
+		} while ( *size ); // Repeat until all block has been read
 		break;
 	case 'F':
 		( *address ) <<= 1; // Convert address to bytes temporarily.
@@ -92,8 +93,8 @@ void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *bu
 				uart_TXchar ( pgm_read_byte_far ( ( add_t ) + 1 ) );
 			}
 			( *address ) += 2; // Select next word in memory.
-			size -= 2; // Subtract two bytes from number of bytes to read
-		} while ( size ); // Repeat until all block has been read
+			*size -= 2; // Subtract two bytes from number of bytes to read
+		} while ( *size ); // Repeat until all block has been read
 
 		( *address ) >>= 1; // Convert address back to Flash words again.
 		break;
@@ -144,7 +145,7 @@ uint8_t page_write_uart( uint16_t size, uint8_t mem_type, uint32_t *address )
 	return '\r';
 }
 */
-uint16_t page_write( uint16_t size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address )
+uint16_t page_write( uint16_t *b_size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address )
 {
 	uint8_t rx_data;
 	uint32_t tmp_address;
@@ -154,52 +155,49 @@ uint16_t page_write( uint16_t size, uint16_t *data_ptr, uint8_t mem_type, uint32
 	switch ( mem_type ) {
 	case 'E':
 		if(data_ptr==0){
-			for ( tmp_address = 0; tmp_address < size; tmp_address++ ) {
+			for ( tmp_address = 0; tmp_address < *b_size; tmp_address++ ) {
 				local_buffer[tmp_address] = uart_RXchar();
 			}
 			data_ptr=(uint16_t *)local_buffer;
 		}
 		boot_spm_busy_wait();
-		for ( tmp_address = 0; tmp_address < size; tmp_address++ ) {
+		for ( tmp_address = 0; tmp_address < *b_size; tmp_address++ ) {
 			eeprom_write_byte ( a_ptr++, data_ptr[tmp_address]>>8 );
 			eeprom_write_byte ( a_ptr++, data_ptr[tmp_address] );
 		}
-		( *address ) += size;
+		( *address ) += *b_size;
 
 		break;
 
 	case 'F':
-
 		( *address ) <<= 1; // Convert address to bytes temporarily.
 		tmp_address = ( *address ); // Store address in page.
 		uint16_t i = 0;
-		uint16_t block_size = size;
+		uint16_t block_size = *b_size;
 		uint16_t data;
 
 		if (data_ptr==0){
+			//uart_TXchar(b_size>>8);
 			do {
 				local_buffer[i++] = uart_RXchar();
-				size -=1;
-			} while ( size ); // Loop until all bytes written.
-
-			fill_page ( tmp_address );
-		}else{
-			for ( i = 0; i < PAGESIZE; i++ ) {
-
-				data = data_ptr[i];
-
-				boot_page_fill_safe ( address + (i<<1), data );
-			}
-			clear_local_buffer();
-
-			boot_page_write_safe ( address );
-
+				*b_size -=1;
+			} while ( *b_size ); // Loop until all bytes written.
+		//	uart_TXchar(size);
+		//	fill_page ( tmp_address );
+			data_ptr=(uint16_t*)local_buffer;
 		}
+		for ( i = 0; i < PAGESIZE; i++ ) {
+			boot_page_fill_safe(address + (i<<1), data_ptr[i]);
+		}
+		clear_local_buffer();
+		boot_page_write_safe ( address );
+		
 		( *address ) += block_size;
 		( *address ) >>= 1;
+		
 		break;
 	}
-	return size;
+	return *b_size;
 }
 
 void clear_local_buffer ( void )
@@ -210,7 +208,7 @@ void clear_local_buffer ( void )
 	}
 
 }
-
+/*
 void fill_page ( uint32_t address )
 {
 	uint16_t i;
@@ -227,7 +225,7 @@ void fill_page ( uint32_t address )
 
 	boot_page_write_safe ( address );
 }
-
+*/
 void erase_flash ( void )
 {
 	uint32_t i;

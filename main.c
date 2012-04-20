@@ -129,7 +129,7 @@ int main ( void )
 		if( val_error == 0){
 			update_sd_install(0);
 		}
-	} else if ( start_bootloader == 3 ){
+	} else if ( start_bootloader ==  3){
 		while ( 1 ) {
 			//uart protocol
 			uint16_t temp_int;
@@ -179,7 +179,6 @@ int main ( void )
 				cli();
 				MCUCR = tmp_MCUCR | ( 1<<IVCE );
 				MCUCR = tmp_MCUCR & ~ ( 1<<IVSEL );
-
 				uart_TXchar ( 'I' );
 				uart_TXchar ( 'N' );
 				uart_TXchar ( 'G' );
@@ -216,7 +215,11 @@ int main ( void )
 
 				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
 				val = uart_RXchar(); //mem type
-				uart_TXchar ( page_write ( temp_int,0, val, &address ) ); // Block load.
+				
+				//uart_TXchar(update_b_size>>8);
+				page_write ( temp_int,0, val, &address );
+				uart_TXchar ( '\r' );
+				
 
 				break;
 			case 'P':
