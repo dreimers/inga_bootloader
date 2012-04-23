@@ -38,11 +38,11 @@ static uint8_t local_buffer[PAGESIZE];
 
 //void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address );
 
-void page_read ( uint16_t *size, uint8_t mem_type, uint32_t *address, uint8_t *buff );
+void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *buff );
 
 //uint8_t page_write_uart ( uint16_t size, uint8_t mem_type, uint32_t *address );
 
-uint16_t page_write( uint16_t *b_size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address );
+uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address );
 
 void clear_local_buffer ( void );
 

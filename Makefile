@@ -11,8 +11,10 @@ TARGET = main
 -include fat/Makefile.fat
 INCLUSDIRS=fat
 vpath %.c $(INCLUSDIRS)
-UPDATE_SRC= update_SD.c
-DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c
+UPDATE_SRC=
+# update_SD.c
+DRV_SRC= flash-mgr.c frq-calib.c uart.c 
+#flash-microSD.c mspi-drv.c flash-at45db.c
 SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) 
 #$(FATSRC)
 ASRC = 

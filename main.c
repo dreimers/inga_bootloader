@@ -30,11 +30,11 @@
 #include "uart.h"
 #include "frq-calib.h"
 #include "flash-mgr.h"
-#include "flash-microSD.h"
-#include "flash-at45db.h"
+//#include "flash-microSD.h"
+//#include "flash-at45db.h"
 #include "update.h"
-#include "update_SD.h"
-#include "diskio.h"
+//#include "update_SD.h"
+//#include "diskio.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -81,6 +81,8 @@ int main ( void )
 	//stay in bootloader conditions
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 1;
+		
+#if DBG 
 	} else if (microSD_init() == 0) { // SD-card found
 #if UPDATE_EVERYTIME
 		start_bootloader = 2;
@@ -90,6 +92,7 @@ int main ( void )
 		if(update_flag){
 			start_bootloader=2;
 		}
+#endif
 #endif
 	} else if ( MCUSR & _BV ( EXTRF ) ) {
 		LED_2_ON();
@@ -104,10 +107,14 @@ int main ( void )
 		OCR0A  |= 100;
 		start_bootloader = 3;
 	}
-
+	start_bootloader = 3;
+	
+#if 0
 	if ( !start_bootloader ) {
 		start_app();
 	}
+#endif
+
 #else 
 	start_bootloader = 2;
 #endif
@@ -124,16 +131,19 @@ int main ( void )
 	sei();
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
+#if DBG
 	if( start_bootloader == 2){
 		uint8_t val_error =update_sd_validate(0);
 		if( val_error == 0){
 			update_sd_install(0);
 		}
-	} else if ( start_bootloader ==  3){
+	} else
+#endif
+			uint16_t temp_int, temp_int2;
+			uint8_t val;
+		if ( start_bootloader ==  3){
 		while ( 1 ) {
 			//uart protocol
-			uint16_t temp_int;
-			uint8_t val;
 			val = uart_RXchar();
 			
 			switch ( val ) {
@@ -142,7 +152,7 @@ int main ( void )
 				break;
 			case 'A':
 				address = 0;
-				address = ( uart_RXchar() << 8 ) | uart_RXchar();
+				address = (uint32_t)( (uint16_t)uart_RXchar() << 8 ) + uart_RXchar();
 				boot_rww_enable_safe();
 				uart_TXchar ( '\r' ); // Send OK back.
 
@@ -189,11 +199,11 @@ int main ( void )
 				break;
 			case 'V':
 				uart_TXchar ( '1' );
-				uart_TXchar ( '2' );
+				uart_TXchar ( '4' );
 				break;
 			case 'v':
 				uart_TXchar ( '1' );
-				uart_TXchar ( '2' );
+				uart_TXchar ( '4' );
 				break;
 			case 's':
 				uart_TXchar ( 0x05 );
@@ -204,7 +214,7 @@ int main ( void )
 				uart_TXchar ( 0 );
 				break;
 			case 'g':
-				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
+				temp_int = (uint16_t)( (uint16_t)uart_RXchar() << 8 ) + uart_RXchar(); // Get block size.
 				val = uart_RXchar(); // Get memtype
 				page_read ( temp_int, val, &address ,0); // Block read
 				break;
@@ -213,7 +223,10 @@ int main ( void )
 				break;
 			case 'B':
 
-				temp_int = ( uart_RXchar() << 8 ) | uart_RXchar(); // Get block size.
+				temp_int = uart_RXchar();
+				temp_int = (temp_int<<8); 
+				temp_int2= uart_RXchar(); // Get block size.
+//				temp_int+=temp_int2;
 				val = uart_RXchar(); //mem type
 				
 				//uart_TXchar(update_b_size>>8);
