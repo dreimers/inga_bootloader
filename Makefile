@@ -11,10 +11,8 @@ TARGET = main
 -include fat/Makefile.fat
 INCLUSDIRS=fat
 vpath %.c $(INCLUSDIRS)
-UPDATE_SRC=
-# update_SD.c
-DRV_SRC= flash-mgr.c frq-calib.c uart.c 
-#flash-microSD.c mspi-drv.c flash-at45db.c
+UPDATE_SRC= update_SD.c
+DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c
 SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) 
 #$(FATSRC)
 ASRC = 
@@ -44,7 +42,7 @@ CINCS =
 
 CDEBUG = -g$(DEBUG)
 CWARN = -Wall -Wstrict-prototypes
-CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+#CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 CFLAGS += $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 
@@ -54,23 +52,23 @@ CFLAGS += $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 
 #Additional libraries.
 
-# Minimalistic printf version
-PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
+# Minimalistic printf version#
+#PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
 
 # Floating point printf version (requires MATH_LIB = -lm below)
-PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
+#PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
 
 PRINTF_LIB = 
 
 # Minimalistic scanf version
-SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
+#SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
 
 # Floating point + %[ scanf version (requires MATH_LIB = -lm below)
-SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
+#SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
 
 SCANF_LIB = 
 
-MATH_LIB = -lm
+#MATH_LIB = -lm
 
 # External memory options
 
@@ -145,7 +143,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: build
+all: build size
 
 
 build:  hex 
@@ -162,7 +160,8 @@ sym: $(TARGET).sym
 program: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
-
+size: $(TARGET).elf
+	avr-size $(TARGET).elf
 
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.

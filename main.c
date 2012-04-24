@@ -30,11 +30,11 @@
 #include "uart.h"
 #include "frq-calib.h"
 #include "flash-mgr.h"
-//#include "flash-microSD.h"
-//#include "flash-at45db.h"
+#include "flash-microSD.h"
+#include "flash-at45db.h"
 #include "update.h"
-//#include "update_SD.h"
-//#include "diskio.h"
+#include "update_SD.h"
+#include "diskio.h"
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -80,9 +80,8 @@ int main ( void )
 	}
 	//stay in bootloader conditions
 	if ( BUTTON_PRESSED() ) {
-		start_bootloader = 1;
+		start_bootloader = 3;
 		
-#if DBG 
 	} else if (microSD_init() == 0) { // SD-card found
 #if UPDATE_EVERYTIME
 		start_bootloader = 2;
@@ -92,7 +91,6 @@ int main ( void )
 		if(update_flag){
 			start_bootloader=2;
 		}
-#endif
 #endif
 	} else if ( MCUSR & _BV ( EXTRF ) ) {
 		LED_2_ON();
@@ -107,22 +105,18 @@ int main ( void )
 		OCR0A  |= 100;
 		start_bootloader = 3;
 	}
-	start_bootloader = 3;
+#endif
+	//start_bootloader = 3;
 	
-#if 0
 	if ( !start_bootloader ) {
 		start_app();
 	}
-#endif
 
-#else 
-	start_bootloader = 2;
-#endif
 
-	//LED_1_ON();
+	LED_1_ON();
 	uart_init();
 	clear_local_buffer();
-	//LED_2_ON();
+	LED_2_ON();
 	frq_calib();
 	//LED_2_OFF();
 #ifndef BL
@@ -131,18 +125,16 @@ int main ( void )
 	sei();
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
-#if DBG
 	if( start_bootloader == 2){
 		uint8_t val_error =update_sd_validate(0);
 		if( val_error == 0){
 			update_sd_install(0);
 		}
 	} else
-#endif
-			uint16_t temp_int, temp_int2;
-			uint8_t val;
 		if ( start_bootloader ==  3){
 		while ( 1 ) {
+			uint16_t temp_int;
+			uint8_t val;
 			//uart protocol
 			val = uart_RXchar();
 			
@@ -223,9 +215,7 @@ int main ( void )
 				break;
 			case 'B':
 
-				temp_int = uart_RXchar();
-				temp_int = (temp_int<<8); 
-				temp_int2= uart_RXchar(); // Get block size.
+				temp_int = (uint16_t)( (uint16_t)uart_RXchar() << 8 ) + uart_RXchar(); // Get block size.
 //				temp_int+=temp_int2;
 				val = uart_RXchar(); //mem type
 				

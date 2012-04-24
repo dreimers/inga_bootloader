@@ -24,6 +24,7 @@
 #include <avr/io.h>
 #include "flash-mgr.h"
 #include "update.h"
+static uint8_t local_buffer[PAGESIZE];
 /*
 void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address )
 {
@@ -68,16 +69,12 @@ void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *bu
 	switch ( mem_type ) {
 	case 'E':
 		do {
-#if DBG
 			if(buff>0){
 				*buff= eeprom_read_byte ( a_ptr++ );
 				buff++;
 			}else{
-#endif
 				uart_TXchar ( eeprom_read_byte ( a_ptr++ ) );
-#if DBG
 			}
-#endif
 			( *address ) ++;
 			size--; // Decrease number of bytes to read
 		} while ( size ); // Repeat until all block has been read
@@ -87,19 +84,15 @@ void page_read ( uint16_t size, uint8_t mem_type, uint32_t *address, uint8_t *bu
 		do {
 			uint32_t add_t;
 			add_t = ( *address );
-#if DBG
 			if(buff>0){
 				*buff= pgm_read_byte_far ( add_t );
 				buff++;
 				*buff= pgm_read_byte_far ( ( add_t ) + 1 );
 				buff++;
 			}else{
-#endif
 				uart_TXchar ( pgm_read_byte_far ( add_t ) );
 				uart_TXchar ( pgm_read_byte_far ( ( add_t ) + 1 ) );
-#if DBG
 			}
-#endif
 			( *address ) += 2; // Select next word in memory.
 			size -= 2; // Subtract two bytes from number of bytes to read
 		} while ( size ); // Repeat until all block has been read
@@ -153,25 +146,21 @@ uint8_t page_write_uart( uint16_t size, uint8_t mem_type, uint32_t *address )
 	return '\r';
 }
 */
+	uint32_t tmp_address;
 uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint32_t *address )
 {
 	uint8_t rx_data;
-	uint32_t tmp_address;
 	uint16_t addr= ( *address ) &0xFFFF;
 	uint8_t *a_ptr = ( uint8_t * ) addr;
 
 	switch ( mem_type ) {
 	case 'E':
-#if DBG
 		if(data_ptr==0){
-#endif
 			for ( tmp_address = 0; tmp_address < b_size; tmp_address++ ) {
 				local_buffer[tmp_address] = uart_RXchar();
 			}
 			data_ptr=(uint16_t *)local_buffer;
-#if DBG
 		}
-#endif
 		boot_spm_busy_wait();
 		for ( tmp_address = 0; tmp_address < b_size; tmp_address++ ) {
 			eeprom_write_byte ( a_ptr++, data_ptr[tmp_address]>>8 );
@@ -188,9 +177,7 @@ uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint
 		uint16_t block_size = b_size;
 		uint16_t data;
 
-#if DBG
 		if (data_ptr==0){
-#endif
 			//uart_TXchar(b_size>>8);
 			do {
 				local_buffer[i++] = uart_RXchar();
@@ -198,15 +185,14 @@ uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint
 			} while ( b_size ); // Loop until all bytes written.
 		//	uart_TXchar(size);
 		//	fill_page ( tmp_address );
-			data_ptr=(uint16_t*)local_buffer;
-#if DBG
+			data_ptr=local_buffer;
 		}
-#endif
-		for ( i = 0; i < PAGESIZE; i++ ) {
-			boot_page_fill_safe(address + (i<<1), data_ptr[i]);
+		i=0;
+		for ( i = 0; i < PAGESIZE; i+=2 ) {
+			boot_page_fill_safe(tmp_address + i, data_ptr[i/2]);
 		}
 		clear_local_buffer();
-		boot_page_write_safe ( address );
+		boot_page_write_safe ( tmp_address );
 		
 		( *address ) += block_size;
 		( *address ) >>= 1;

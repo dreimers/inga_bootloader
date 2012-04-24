@@ -34,7 +34,6 @@
 #define PAGESIZE 			256
 #define APPLICATION_END		0x1E000
 
-static uint8_t local_buffer[PAGESIZE];
 
 //void page_read_uart ( uint16_t size, uint8_t mem_type, uint32_t *address );
 
