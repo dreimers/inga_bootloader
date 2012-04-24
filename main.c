@@ -96,6 +96,7 @@ int main ( void )
 			start_bootloader=2;
 			LED_2_ON();
 		}
+#endif
 	} else if ( MCUSR & _BV ( EXTRF ) ) {
 		LED_1_ON();
 		tmp_SREG = SREG;
