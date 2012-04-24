@@ -72,7 +72,6 @@ int main ( void )
 	at45db_init();
 #endif
 
-#ifdef BL
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
 		MCUSR &=~ ( 1 << EXTRF );
@@ -81,6 +80,7 @@ int main ( void )
 	//stay in bootloader conditions
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 3;
+		LED_1_ON();
 		
 	} else if (microSD_init() == 0) { // SD-card found
 #if UPDATE_EVERYTIME
@@ -90,10 +90,14 @@ int main ( void )
 		at45db_read_page_bypassed(AT45DB_PAGES-1,0,&update_flag,1);
 		if(update_flag){
 			start_bootloader=2;
+			LED_2_ON();
 		}
-#endif
+		if (BUTTON_PRESSED()){
+			start_bootloader=2;
+			LED_2_ON();
+		}
 	} else if ( MCUSR & _BV ( EXTRF ) ) {
-		LED_2_ON();
+		LED_1_ON();
 		tmp_SREG = SREG;
 		cli();
 		tmp_MCUCR = MCUCR;
@@ -105,7 +109,6 @@ int main ( void )
 		OCR0A  |= 100;
 		start_bootloader = 3;
 	}
-#endif
 	//start_bootloader = 3;
 	
 	if ( !start_bootloader ) {
@@ -113,15 +116,10 @@ int main ( void )
 	}
 
 
-	LED_1_ON();
 	uart_init();
 	clear_local_buffer();
-	LED_2_ON();
 	frq_calib();
 	//LED_2_OFF();
-#ifndef BL
-	uint8_t test=microSD_init();
-#endif
 	sei();
 	//check for other firmware sources than uart
 	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
@@ -251,7 +249,6 @@ int main ( void )
 	return 0;
 }
 
-#ifdef BL
 ISR ( TIMER0_COMPA_vect )
 {
 	static uint16_t count = 0;
@@ -276,5 +273,4 @@ ISR ( TIMER0_COMPA_vect )
 		start_app();
 	}
 }
-#endif
 // kate: indent-mode cstyle; replace-tabs off; tab-width 8; 

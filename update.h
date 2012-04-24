@@ -3,7 +3,7 @@
 
 #define INTERNAL_FLASH_SIZE 1000
 
-#define UPDATE_EVERYTIME 1
+#define UPDATE_EVERYTIME 0
 #define BACKUP 1
 #define DBG 0
 
