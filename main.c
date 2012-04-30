@@ -66,11 +66,9 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
-#if UPDATE_EVERYTIME
-	LED_2_OFF();
-#else
-	at45db_init();
-#endif
+	uint8_t flash_init= at45db_init();
+	uint8_t sd_init= microSD_init(); 
+	uint8_t update_method=0;
 
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
@@ -81,13 +79,16 @@ int main ( void )
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 3;
 		LED_1_ON();
-		
-	} else if (microSD_init() == 0) { // SD-card found
+	
+	} else if ( flash_init==0) { 
+		if(sd_init==0){
+			update_method=1;
+		}
+		uint8_t update_flag=0;
+		at45db_read_page_bypassed(AT45DB_PAGES-1,0,&update_flag,1);
 #if UPDATE_EVERYTIME
 		start_bootloader = 2;
 #else
-		uint8_t update_flag=0;
-		at45db_read_page_bypassed(AT45DB_PAGES-1,0,&update_flag,1);
 		if(update_flag){
 			start_bootloader=2;
 			LED_2_ON();
@@ -120,14 +121,11 @@ int main ( void )
 	uart_init();
 	clear_local_buffer();
 	frq_calib();
-	//LED_2_OFF();
 	sei();
-	//check for other firmware sources than uart
-	//TODO check SD-card first block imagelen + magic code and (len/512)+1.block magic code
 	if( start_bootloader == 2){
-		uint8_t val_error =update_sd_validate(0);
+		uint8_t val_error =update_validate(0);
 		if( val_error == 0){
-			update_sd_install(0);
+			update_install(update_method,0);
 		}
 	} else
 		if ( start_bootloader ==  3){
