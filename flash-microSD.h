@@ -142,7 +142,7 @@ uint8_t microSD_deinit(void);
  *  		<li> 1 : CMD17 failure!
  * 		   </ul>
  */
-uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer);
+void microSD_read_block(uint32_t addr, uint8_t *buffer);
 
 /**
  * \brief This function will write one block (512, 1024, 2048 or 4096Byte) of the SD-Card.
@@ -155,7 +155,7 @@ uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer);
  *  		<li> 1 : CMD24 failure!
  * 		   </ul>
  */
-uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer);
+void microSD_write_block( uint32_t addr, uint8_t* buffer );
 
 /**
  * \brief This function sends a command via SPI to the SD-Card. An SPI

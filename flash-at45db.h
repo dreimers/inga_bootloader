@@ -244,7 +244,7 @@ void at45db_erase_page(uint16_t addr);
  * \param bytes Number of bytes (e.g. byte buffer size) which have to
  *        be read to the local byte buffer
  */
-void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes);
+void at45db_write_page( uint32_t p_addr32, uint8_t* buffer );
 
 /**
  * \brief Bytes can be read via buffer from a Flash EEPROM page. With this
@@ -272,7 +272,7 @@ void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16
  *        be read to the local byte buffer
  *
  */
-void at45db_read_page_bypassed(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes);
+void at45db_read_page_bypassed( uint32_t p_addr, uint8_t* buffer );
 
 /**
  * \brief Copies the given page into the buffer 2.

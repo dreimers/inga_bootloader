@@ -424,7 +424,7 @@ uint8_t microSD_init(void) {
 	return 0;
 }
 
-uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer) {
+void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	uint16_t i;
 	uint8_t ret;
 	/*CMD17 read block*/
@@ -450,7 +450,6 @@ uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer) {
 		#if DEBUG
 		printf("\nmicroSD_read_block(): CMD17 failure! (%u)",i);
 		#endif
-		return 1;
 	}
 
 	/*wait for the 0xFE start byte*/
@@ -464,7 +463,6 @@ uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	#if DEBUG
 	printf("\nmicroSD_read_block(): No Start Byte recieved, last was %d", ret);
 	#endif
-	return 2;
 
 	read:
 	for (i = 0; i < 512; i++) {
@@ -477,7 +475,6 @@ uint8_t microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	/*release chip select and disable microSD spi*/
 	mspi_chip_release(MICRO_SD_CS);
 
-	return 0;
 }
 
 uint8_t microSD_deinit(void) {
@@ -495,7 +492,7 @@ uint16_t microSD_get_status(void) {
 	return ((uint16_t) resp[1] << 8) + ((uint16_t) resp[0]);
 }
 
-uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer) {
+void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	uint16_t i;
 	/*CMD24 write block*/
 	uint8_t cmd[6] = { 0x58, 0x00, 0x00, 0x00, 0x00, 0xFF };
@@ -529,7 +526,6 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	if ((i = microSD_write_cmd( cmd, NULL)) != 0x00) {
 		//printf("\nmicroSD_write_block(): CMD24 failure! (%u)",i );
 		mspi_chip_release(MICRO_SD_CS);
-		return 1;
 	}
 	mspi_transceive(MSPI_DUMMY_BYTE);
 
@@ -552,14 +548,12 @@ uint8_t microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	if (((i = mspi_transceive(MSPI_DUMMY_BYTE)) & 0x1F) != 0x05) {
 		//printf("\nmicroSD_write_block(): Error writing block %lx! Ret code = %x", addr, i);
 		mspi_chip_release(MICRO_SD_CS);
-		return -2;
 	}
 	/*wait while microSD card is busy*/
 	while (mspi_transceive(MSPI_DUMMY_BYTE) != 0xff) {};
 	/*release chip select and disable microSD spi*/
 	mspi_chip_release(MICRO_SD_CS);
 
-	return 0;
 }
 
 uint8_t microSD_write_cmd(const uint8_t *cmd, uint8_t *resp) {

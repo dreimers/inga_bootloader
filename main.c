@@ -69,7 +69,7 @@ int main ( void )
 	uint8_t flash_init= at45db_init();
 	uint8_t sd_init= microSD_init(); 
 	uint8_t update_method=0;
-
+	uint8_t buffer[256];
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
 		MCUSR &=~ ( 1 << EXTRF );
@@ -84,8 +84,9 @@ int main ( void )
 		if(sd_init==0){
 			update_method=1;
 		}
-		uint8_t update_flag=0;
-		at45db_read_page_bypassed(AT45DB_PAGES-1,0,&update_flag,1);
+		
+		at45db_read_page_bypassed(AT45DB_PAGES-1,buffer);
+		uint8_t update_flag=buffer[0];
 #if UPDATE_EVERYTIME
 		start_bootloader = 2;
 #else
@@ -123,7 +124,7 @@ int main ( void )
 	frq_calib();
 	sei();
 	if( start_bootloader == 2){
-		uint8_t val_error =update_validate(0);
+		uint8_t val_error =update_validate(update_method,0);
 		if( val_error == 0){
 			update_install(update_method,0);
 		}

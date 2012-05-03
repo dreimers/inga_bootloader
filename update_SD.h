@@ -2,6 +2,9 @@
 #define __UPDATE_SD_H__
 #define FORMAT 1
 
+#define SD 1
+#define AT 0
+
 #define MAGIC_NUM 5
 #include <stdint.h>
 uint8_t update_validate (uint8_t method, uint32_t header_addr);

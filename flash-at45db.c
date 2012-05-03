@@ -132,11 +132,14 @@ void at45db_buffer_to_page(uint16_t addr) {
 }
 #endif
 
-void at45db_write_page(uint16_t p_addr, uint16_t b_addr, uint8_t *buffer, uint16_t bytes) {
+void at45db_write_page(uint32_t p_addr32,  uint8_t *buffer ) {
+	uint16_t p_addr = (uint16_t) p_addr32;
+	uint16_t bytes=512;
+	uint16_t b_addr =0;
 	uint16_t i;
 	/*block erase command consists of 4 byte*/
 	uint8_t cmd[4] = { buffer_mgr.page_program[buffer_mgr.active_buffer],
-			(uint8_t) (p_addr >> 6), ((uint8_t) (p_addr << 2) & 0xFC) | ((uint8_t) (b_addr >> 8) & 0x3), (uint8_t) (b_addr) };
+			(uint8_t) ( p_addr32 >> 6), ((uint8_t) ( p_addr32 << 2) & 0xFC) | ((uint8_t) (b_addr >> 8) & 0x3), (uint8_t) (b_addr) };
 
 	at45db_write_cmd(&cmd[0]);
 
@@ -159,15 +162,17 @@ void (uint16_t p_addr, uint16_t b_addr,
 	at45db_read_buffer(b_addr, buffer, bytes);
 }
 #endif
-void at45db_read_page_bypassed(uint16_t p_addr, uint16_t b_addr,
-		uint8_t *buffer, uint16_t bytes) {
+void at45db_read_page_bypassed(uint32_t p_addr32, uint8_t *buffer) {
+	uint16_t p_addr = (uint16_t) p_addr32;
+	uint16_t bytes=512;
+	uint16_t b_addr =0;
 	uint16_t i;
 	/*wait until AT45DB161 is ready again*/
 	at45db_busy_wait();
 	/* read bytes directly from page command consists of 4 cmd bytes and
 	 * 4 don't care */
-	uint8_t cmd[4] = { AT45DB_PAGE_READ, (uint8_t) (p_addr >> 6),
-			(((uint8_t) (p_addr << 2)) & 0xFC) | ((uint8_t) (b_addr >> 8)),
+	uint8_t cmd[4] = { AT45DB_PAGE_READ, (uint8_t) ( p_addr >> 6),
+			(((uint8_t) ( p_addr << 2)) & 0xFC) | ((uint8_t) (b_addr >> 8)),
 			(uint8_t) (b_addr) };
 	at45db_write_cmd(&cmd[0]);
 	for (i = 0; i < 4; i++) {
