@@ -1,9 +1,7 @@
 #ifndef __UPDATE_SD_H__
 #define __UPDATE_SD_H__
-#define FORMAT 1
+#define FORMAT 0
 
-#define SD 1
-#define AT 0
 
 #define MAGIC_NUM 5
 #include <stdint.h>

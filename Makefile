@@ -85,7 +85,7 @@ EXTMEMOPTS =
 #LDMAP = $(LDFLAGS) -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB) 
 ifeq ($(BL),1)
-CFLAGS += -DBL
+CFLAGS += -DBL -fpack-struct
 BOOTSTART = 0x1E000
 LDFLAGS += -Wl,--section-start=.text=$(BOOTSTART)
 

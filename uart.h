@@ -25,10 +25,10 @@
 
 #ifndef UART_H_
 #define UART_H_
-
+#define TEST 0
 #include <avr/io.h>
 #include "frq-calib.h"
-#ifdef BL
+#if TEST
 #define BAUDRATE_UART 	230400UL
 #else
 #define BAUDRATE_UART	19200UL

@@ -132,7 +132,7 @@ uint8_t microSD_is_SDSC(void);
 uint8_t microSD_deinit(void);
 
 /**
- * \brief This function will read one block (512, 1024, 2048 or 4096Byte) of the SD-Card.
+ * \brief This function will read one block (512Byte) of the SD-Card.
  *
  * \param addr Block address
  * \param *buffer Pointer to a block buffer (needs to be as long es microSD_get_block_size()).

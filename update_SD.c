@@ -6,11 +6,16 @@
 #include "flash-at45db.h"
 #include <string.h>
 
+#include "uart.h"
+
+
+
+#define LED_2_TOGGLE()		PORTD ^= (1 << PD7)
 update_t update;
 
 
-void (*update_read_block[2])(uint32_t , uint8_t*)={microSD_read_block,at45db_read_page_bypassed};
-void (*update_write_block[2])(uint32_t , uint8_t*)={microSD_write_block,at45db_write_page};
+void (*update_read_block[2])(uint32_t , uint8_t*)={at45db_read_page_bypassed,microSD_read_block};
+void (*update_write_block[2])(uint32_t , uint8_t*)={at45db_write_page,microSD_write_block};
 
 
 
@@ -31,8 +36,8 @@ void update_format (void)
 	uint32_t addr = 1;
 	//flags
 	buff[7] = 0;
-	update_write_block[0] (0, buff);
-	update_write_block[0] ( ( (uint32_t) size * 512) + addr, buff);
+	update_write_block[1] (0, buff);
+	update_write_block[1] ( ( (uint32_t) size +addr)*512, buff);
 
 }
 #endif
@@ -54,7 +59,7 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 	buff[0] = MAGIC_NUM;
 	bk.flags = 1;
 	bk.success_count = 0;
-	/*
+	
 	//size
 	*((uint16_t*)&buff[1]) = bk.size;
 	//addr
@@ -64,10 +69,10 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 	//success_count
 	buff[8] = (bk.success_count>>8)&0xff;
 	buff[9] = (bk.success_count)&0xff;
-	*/
-	memcpy (&buff[1], &bk, sizeof (update_t));
+	
+	//memcpy (&buff[1], &bk, sizeof (update_t));
 	update_write_block[method] (header_addr, buff);
-	update_write_block[method] ( ( (uint32_t) bk.size * 512) + bk.addr, buff);
+	update_write_block[method] ( ( (uint32_t) bk.size bk.addr)*512, buff);
 
 }
 #endif
@@ -76,17 +81,29 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr)
 	uint8_t buff[512];
 	update_read_block[method] (header_addr, buff);
 	if (buff[0] == MAGIC_NUM) {
-		/*
+		
+		
 		update.size = *((uint16_t*)&buff[1]);
 		update.addr = *((uint32_t*)&buff[3]);
 		update.flags = buff[7];
 		update.success_count = ((uint16_t)buff[8]<<8) | buff[9];
-		*/
-		memcpy (&buff[1], &update, sizeof (update_t));
-		update_read_block[method] ( ( (uint32_t) update.size * 512) + update.addr , buff);
-		if ( (buff[0] == MAGIC_NUM) && \
-				memcmp (&buff[1], &update, sizeof (update_t))) {
-			return 0; //success
+		
+		
+		//memcpy (&buff[1], &update, sizeof (update_t));
+		uart_TXchar(update.size);
+		update_read_block[method] ( ( (uint32_t) update.size + update.addr+1) , buff);
+		uart_TXchar('A');
+		uart_TXchar(((update.size + update.addr+1)*512)>>8);
+		uart_TXchar(((update.size + update.addr+1)*512));
+		if ( (buff[0] == MAGIC_NUM) ){
+			if (update.size == *((uint16_t*)&buff[1])){
+				uart_TXchar(1);
+				if(update.addr == *((uint32_t*)&buff[3])) {
+					uart_TXchar(2);
+					return 0; //success
+				}
+			}
+				
 		} else {
 			return 3;
 		}
@@ -105,9 +122,12 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	uint16_t buff[256];
 	uint16_t i = 0;
 #if BACKUP
-	update_backup (method, 512, update.addr + update.size * 512);
+	update_backup (method, 512, (update.addr + update.size) * 512);
 #endif
+	uart_TXchar(update.size>>8);
+	uart_TXchar(update.size);
 	for (; i < update.size; i += 512) {
+		LED_2_TOGGLE();
 		update_read_block[method] (update.addr + i, (uint8_t*)buff);
 		page_write (PAGESIZE, buff, 'F', &flash_addr);
 		page_write (PAGESIZE, buff + PAGESIZE * 2, 'F', &flash_addr);
@@ -126,6 +146,6 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	* ( (uint16_t *) &buff[8]) = update.success_count;
 #endif
 	memcpy (&buff[1], &update, sizeof (update_t));
-	update_write_block[method] (header_addr, buff);
-	update_write_block[method] ( ( (uint32_t) update.size * 512) + update.addr, buff);
+//	update_write_block[method] (header_addr, buff);
+//	update_write_block[method] ( ( (uint32_t) update.size * 512) + update.addr, buff);
 }
