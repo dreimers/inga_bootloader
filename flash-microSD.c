@@ -74,6 +74,7 @@ uint32_t microSD_card_block_count = 0;
  */
 uint8_t microSD_sdsc_card = 1;
 
+
 /**
  * \brief Indicates if the cards CRC mode is on (1) or off (0). Default is off.
  */
@@ -436,8 +437,9 @@ void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	 * SDHC and SDXC card use block-addressing with a block size of
 	 * 512 Bytes.
 	 */
-	if( microSD_sdsc_card ) 
-		addr = addr << 9;
+	//if( microSD_sdsc_card ) {
+	//	addr = addr << 9;
+	//}
 	/* create cmd bytes according to the address
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above

@@ -128,7 +128,7 @@ int main ( void )
 	sei();
 	if( start_bootloader == 2){
 		uint8_t val_error =update_validate(update_method,0);
-		uart_TXchar('0'+update_method);
+		//uart_TXchar('0'+update_method);
 		if( val_error == 0){
 			LED_2_TOGGLE();
 			LED_1_ON();

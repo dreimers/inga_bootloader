@@ -7,8 +7,7 @@ if (sys.argv[1] == "TEST"):
 	of=open(sys.argv[2],'wb')
 	for j in range(256):
 		for i in range(512):
-			s="%c" % j
-			print s
+			s="%c" % (j%255)
 			of.write(s)
 	of.close()
 else:

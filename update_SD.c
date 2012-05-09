@@ -80,15 +80,16 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr)
 {
 	uint8_t buff[512];
 	//update_read_block[method] (header_addr, buff);
-	uint8_t i=0,j=0;
-	uint16_t val=0xffff;
-	for (;j<0xff;j++){
+	uint8_t j=0;
+	uint16_t val=0xffff,i=0;
+	for (j=0;j<0xff;j++){
 		update_read_block[method] (j, buff);
-		for (;i<512;i++){
-			if (buff[i]!=val){
-				uart_TXchar(buff[i]);
+			//uart_TXchar(j);
+		for (i=0;i<512;i++){
+			uart_TXchar(buff[i]);
+			//if (buff[i]!=(uint8_t)val){
 				val=buff[i];
-			}
+			//}
 		}
 	}
 	if (buff[0] == MAGIC_NUM) {
