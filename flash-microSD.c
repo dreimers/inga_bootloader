@@ -362,10 +362,10 @@ uint8_t microSD_init(void) {
 		printf("\nmicroSD_init():\tWriting cmd55");
 		#endif
 		resp[0] = 0x01;
-		i = 0;
 		uint16_t j=0;
 		do{
 			j++;
+			i = 0;
 			while( microSD_write_cmd( cmd55, NULL ) != 0x01 ) {
 				i++;
 				if (i > 500) {
@@ -380,7 +380,7 @@ uint8_t microSD_init(void) {
 			#if DEBUG
 			printf("\nmicroSD_init():\tWriting cmd41");
 			#endif
-		}while( (microSD_write_cmd( cmd41, NULL ) != 0) && (j<500) );
+		}while( (microSD_write_cmd( cmd41, NULL ) != 0) && (j<1000) );
 		resp[0] = 0x03;
 		i = 0;
 		#if DEBUG
@@ -552,7 +552,7 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 		mspi_chip_release(MICRO_SD_CS);
 	}
 	/*wait while microSD card is busy*/
-	uint8_t i=0;
+	i=0;
 	while ((mspi_transceive(MSPI_DUMMY_BYTE) != 0xff)&& (i<100)) {
 		i++;
 	}
