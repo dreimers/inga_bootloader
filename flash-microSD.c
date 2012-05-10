@@ -449,9 +449,9 @@ void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	 */
 	//*(uint32_t*)&cmd[1] = addr;
 	cmd[1] = ((addr & 0xFF000000) >> 24);
-        cmd[2] = ((addr & 0x00FF0000) >> 16);
-        cmd[3] = ((addr & 0x0000FF00) >> 8);
-
+	cmd[2] = ((addr & 0x00FF0000) >> 16);
+	cmd[3] = ((addr & 0x0000FF00) >> 8);
+	cmd[4] = ((addr & 0x000000FF));
 
 	/* send CMD17 with address information. Chip select is done by
 	 * the microSD_write_cmd method and */
@@ -462,28 +462,29 @@ void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	}
 
 	/*wait for the 0xFE start byte*/
-	//printf("\n");
+    uint8_t success=0;
 	for(i = 0; i < 100; i++) {
-		if((ret = mspi_transceive(MSPI_DUMMY_BYTE)) != 0xFE ) {
-			#if DEBUG
-			printf("\nmicroSD_read_block(): No Start Byte recieved, last was %d", ret);
-			#endif
-		}else{
+		if((ret = mspi_transceive(MSPI_DUMMY_BYTE)) == 0xFE ) {
+			success=1;
 			break;
 		}
-		//printf("%x ", ret);
 	}
+	if(success == 0){
+		PRINTF("\nmicroSD_read_block(): No Start Byte recieved, last was %d", ret);
+		
+    }
 
 	for (i = 0; i < 512; i++) {
 		buffer[i] = mspi_transceive(MSPI_DUMMY_BYTE);
 	}
 	/*CRC-Byte: don't care*/
-	/*buffer[512] = */mspi_transceive(MSPI_DUMMY_BYTE);
-	/*buffer[513] = */mspi_transceive(MSPI_DUMMY_BYTE);
+	mspi_transceive(MSPI_DUMMY_BYTE);
+	mspi_transceive(MSPI_DUMMY_BYTE);
 
 	/*release chip select and disable microSD spi*/
 	mspi_chip_release(MICRO_SD_CS);
 
+	
 }
 
 uint8_t microSD_deinit(void) {
@@ -505,7 +506,7 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	uint16_t i;
 	/*CMD24 write block*/
 	uint8_t cmd[6] = { 0x58, 0x00, 0x00, 0x00, 0x00, 0xFF };
-	//uint16_t crc = MSPI_DUMMY_BYTE + ((uint16_t) MSPI_DUMMY_BYTE << 8);
+
 
 	/* calculate the start address: block_addr = addr * 512
 	 * this is only needed if the card is a SDSC card and uses
@@ -515,6 +516,8 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	 */
 	if( microSD_sdsc_card ) 
 		addr = addr << 9;
+	}
+
 	/* create cmd bytes according to the address
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above
@@ -523,14 +526,10 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	cmd[2] = ((addr & 0x00FF0000) >> 16);
 	cmd[3] = ((addr & 0x0000FF00) >> 8);
 	cmd[4] = ((addr & 0x000000FF));
-	//if( microSD_crc_enable ) {
-		//crc = microSD_data_crc( buffer );
-	//}
 
 	/* send CMD24 with address information. Chip select is done by
 	 * the microSD_write_cmd method and */
 	if ((i = microSD_write_cmd( cmd, NULL)) != 0x00) {
-		//printf("\nmicroSD_write_block(): CMD24 failure! (%u)",i );
 		mspi_chip_release(MICRO_SD_CS);
 	}
 	mspi_transceive(MSPI_DUMMY_BYTE);
@@ -545,14 +544,12 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	}
 
 	/*write CRC checksum: Dummy*/
-	//mspi_transceive((uint8_t) (crc >> 8));
-	//mspi_transceive((uint8_t) crc);
 	mspi_transceive(MSPI_DUMMY_BYTE);
 	mspi_transceive(MSPI_DUMMY_BYTE);
 
 	/*failure check: Data Response XXX00101 = OK*/
 	if (((i = mspi_transceive(MSPI_DUMMY_BYTE)) & 0x1F) != 0x05) {
-		//printf("\nmicroSD_write_block(): Error writing block %lx! Ret code = %x", addr, i);
+
 		mspi_chip_release(MICRO_SD_CS);
 	}
 	/*wait while microSD card is busy*/
