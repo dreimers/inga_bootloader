@@ -83,14 +83,16 @@ int main ( void )
 	
 	} else if ( flash_init==0) { 
 		if(sd_init==0){
-			uart_TXchar('S');
-			
 			update_method=1;
+		}else{
+			
+		uart_TXchar('E');
+		uart_TXchar('0'+sd_init);
 		}
 		
 #if UPDATE_EVERYTIME
-		start_bootloader = 2;
 		LED_2_ON();
+		start_bootloader = 2;
 #else
 		at45db_read_page_bypassed(AT45DB_PAGES-1,buffer);
 		uint8_t update_flag=buffer[0];
