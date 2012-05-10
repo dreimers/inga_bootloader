@@ -112,7 +112,7 @@ uint16_t microSD_get_status(void);
  * \return 0 on success, !=0 otherwise
  */
 uint8_t microSD_set_CRC( uint8_t enable ) {
-	uint8_t cmd[6] = { 0x7A, 0x00, 0x00, 0x00, 0x00, 0xFF };
+	uint8_t  cmd[6] = { 0x7A, 0x00, 0x00, 0x00, 0x00, 0xFF };
 	uint8_t ret;
 	if( enable != 0 ) {
 		cmd[1] = 0xFF;
@@ -380,7 +380,10 @@ uint8_t microSD_init(void) {
 			#if DEBUG
 			printf("\nmicroSD_init():\tWriting cmd41");
 			#endif
-		}while( (microSD_write_cmd( cmd41, NULL ) != 0) && (j<1000) );
+			if(j>12000){
+				return 8;
+			}
+		}while( (microSD_write_cmd( cmd41, NULL ) != 0)  );
 		resp[0] = 0x03;
 		i = 0;
 		#if DEBUG
@@ -444,7 +447,11 @@ void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above
 	 */
-	*(uint32_t*)&cmd[1] = addr;
+	//*(uint32_t*)&cmd[1] = addr;
+	cmd[1] = ((addr & 0xFF000000) >> 24);
+        cmd[2] = ((addr & 0x00FF0000) >> 16);
+        cmd[3] = ((addr & 0x0000FF00) >> 8);
+
 
 	/* send CMD17 with address information. Chip select is done by
 	 * the microSD_write_cmd method and */
@@ -512,13 +519,10 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	 * Note that cmd[4] will always be 0 for SDSC cards,
 	 * because of the shift above
 	 */
-	*(uint32_t*)&cmd[1]=addr;
-	/*
 	cmd[1] = ((addr & 0xFF000000) >> 24);
 	cmd[2] = ((addr & 0x00FF0000) >> 16);
 	cmd[3] = ((addr & 0x0000FF00) >> 8);
 	cmd[4] = ((addr & 0x000000FF));
-	*/
 	//if( microSD_crc_enable ) {
 		//crc = microSD_data_crc( buffer );
 	//}
