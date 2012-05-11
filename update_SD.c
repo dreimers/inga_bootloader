@@ -83,8 +83,8 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 uint8_t update_validate (uint8_t method, uint32_t header_addr)
 {
 	uint8_t buff[512];
+	memset(buff,0,512);
 	update_read_block[method] (header_addr, buff);
-	
 	if (buff[0] == MAGIC_NUM) {
 
 
@@ -95,18 +95,16 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr)
 
 
 		//memcpy (&buff[1], &update, sizeof (update_t));
-		uart_TXchar (update.size);
 		update_read_block[method] ( ( (uint32_t) update.size + update.addr + 1) , buff);
-		uart_TXchar ('A');
-		uart_TXchar ( ( (update.size + update.addr + 1) * 512) >> 8);
-		uart_TXchar ( ( (update.size + update.addr + 1) * 512));
 		if ( (buff[0] == MAGIC_NUM)) {
 			if (update.size == * ( (uint16_t *) &buff[1])) {
-				uart_TXchar (1);
 				if (update.addr == * ( (uint32_t *) &buff[3])) {
-					uart_TXchar (2);
 					return 0; //success
+				}else{
+					return 5;
 				}
+			}else{
+				return 4;
 			}
 
 		} else {

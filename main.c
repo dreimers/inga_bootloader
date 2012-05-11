@@ -35,6 +35,8 @@
 #include "update.h"
 #include "update_SD.h"
 #include "diskio.h"
+#include "mspi-drv.h"
+
 
 #define LED_INIT()		DDRD |= (1 << PD5)|(1 << PD7)
 #define BUTTON_INIT()		DDRB  &= ~(1<<DDB2);PORTB |= (1 << PB2)
@@ -66,11 +68,23 @@ int main ( void )
 	BUTTON_INIT();
 	LED_1_OFF();
 	LED_2_OFF();
+	// set adxl345 in sleep mode
+	/*mspi_init(2,3,3);
+	mspi_chip_select(2);
+	
+	mspi_transceive(0x2d);
+	mspi_transceive(0x04);
+	mspi_chip_release(2);
+	*/
 	uart_init();
 	uint8_t flash_init= at45db_init();
 	uint8_t sd_init= microSD_init(); 
 	uint8_t update_method=0;
+	
+#if UPDATE_EVERYTIME
+#else
 	uint8_t buffer[512];
+#endif
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
 		MCUSR &=~ ( 1 << EXTRF );
@@ -84,6 +98,7 @@ int main ( void )
 	} else if ( flash_init==0) { 
 		if(sd_init==0){
 			update_method=1;
+			uart_TXchar('S');
 		}else{
 			
 		uart_TXchar('E');
@@ -130,7 +145,8 @@ int main ( void )
 	sei();
 	if( start_bootloader == 2){
 		uint8_t val_error =update_validate(update_method,0);
-		//uart_TXchar('0'+update_method);
+		uart_TXchar("V");
+		uart_TXchar(update_method);
 		if( val_error == 0){
 			LED_2_TOGGLE();
 			LED_1_ON();

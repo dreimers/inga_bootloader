@@ -13,7 +13,7 @@ struct update_s {
 	uint16_t size; // size in blocks
 	uint32_t addr; // address in byte
 	uint8_t flags;
-	uint16_t success_count;
+	uint8_t success_count;
 } __attribute__((__packed__));
 
 typedef struct update_s update_t;

@@ -50,7 +50,7 @@
  */
 
 #include "flash-microSD.h"
-
+#include "uart.h"
 #define DEBUG 0
 
 #define LED_1_ON()		PORTD &=~(1 << PD5)
@@ -463,16 +463,15 @@ void microSD_read_block(uint32_t addr, uint8_t *buffer) {
 
 	/*wait for the 0xFE start byte*/
     uint8_t success=0;
-	for(i = 0; i < 100; i++) {
+	for(i = 0; i < 1000; i++) {
 		if((ret = mspi_transceive(MSPI_DUMMY_BYTE)) == 0xFE ) {
 			success=1;
 			break;
 		}
 	}
 	if(success == 0){
-		PRINTF("\nmicroSD_read_block(): No Start Byte recieved, last was %d", ret);
-		
-    }
+		return;
+	}
 
 	for (i = 0; i < 512; i++) {
 		buffer[i] = mspi_transceive(MSPI_DUMMY_BYTE);
@@ -514,7 +513,7 @@ void microSD_write_block(uint32_t addr, uint8_t *buffer) {
 	 * SDHC and SDXC card use block-addressing with a block size of
 	 * 512 Bytes.
 	 */
-	if( microSD_sdsc_card ) 
+	if( microSD_sdsc_card ) {
 		addr = addr << 9;
 	}
 

@@ -23,13 +23,16 @@ else:
 		if byte_count%512 >0:
 			block_count+=1
 		print "size="+str(byte_count)+", "+str(block_count)+" blocks used"
-		header=[magic_num,(block_count)&0xff,(block_count>>8)&0xff]
+		header=[magic_num]
+		header.append((block_count)&0xff)
+		header.append((block_count>>8)&0xff)
 		header.append((start_address)&0xff)
 		header.append((start_address>>8)&0xff)
 		header.append((start_address>>16)&0xff)
 		header.append((start_address>>24)&0xff)
 		header.append(flags)
 		header.append(0)
+		header.append(1)
 		print header
 		of=open(sys.argv[2],'wb')
 		write_count=0
