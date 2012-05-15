@@ -5,7 +5,7 @@
 
 #define MAGIC_NUM 5
 #include <stdint.h>
-uint8_t update_validate (uint8_t method, uint32_t header_addr);
+uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos);
 uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_addr);
 uint8_t update_install (uint8_t method, uint32_t header_addr);
 

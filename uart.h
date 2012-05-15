@@ -25,7 +25,7 @@
 
 #ifndef UART_H_
 #define UART_H_
-#define TEST 0
+#define TEST 1 
 #include <avr/io.h>
 #include "frq-calib.h"
 #if TEST

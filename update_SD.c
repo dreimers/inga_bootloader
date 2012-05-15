@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "uart.h"
-
+#include "crc16.h"
 
 #define LED_1_ON()		PORTD &=~(1 << PD5)
 #define LED_2_ON()		PORTD &=~(1 << PD7)
@@ -50,7 +50,8 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 {
 	update_t bk;
 	uint32_t i = 0;
-	static uint8_t buff[512];
+	uint8_t buff[512];
+	update_read_block[method] (header_addr, buff);
 	bk.addr = backup_addr;
 	uint32_t addr = 0;
 	bk.size = 0;
@@ -59,20 +60,24 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 		page_read (512, 'F', &addr, buff);
 		update_write_block[method] (backup_addr + (bk.size * 512), buff);
 	}
-	memset (buff, 0, 512);
-	buff[0] = MAGIC_NUM;
 	bk.flags = 1;
 	bk.success_count = 0;
-
+	uint16_t pos=9;
+	while(buff[pos]!=1){
+		pos+=9
+	}
+	buff[pos]=0;
+	
+	
 	//size
-	* ( (uint16_t *) &buff[1]) = bk.size;
+	* ( (uint16_t *) &buff[pos+1]) = bk.size;
 	//addr
-	* ( (uint32_t *) &buff[3]) = bk.addr;
+	* ( (uint32_t *) &buff[pos+3]) = bk.addr;
 	//flags
-	buff[7] = bk.flags;
+	buff[pos+7] = bk.flags;
 	//success_count
-	buff[8] = (bk.success_count >> 8) & 0xff;
-	buff[9] = (bk.success_count) & 0xff;
+	buff[pos+8] = (bk.success_count) & 0xff;
+	buff[pos+9] = 1;
 
 	//memcpy (&buff[1], &bk, sizeof (update_t));
 	update_write_block[method] (header_addr, buff);
@@ -80,25 +85,40 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 
 }
 #endif
-uint8_t update_validate (uint8_t method, uint32_t header_addr)
+uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 {
 	uint8_t buff[512];
-	memset(buff,0,512);
 	update_read_block[method] (header_addr, buff);
 	if (buff[0] == MAGIC_NUM) {
 
+		pos*=9;
+		update.size = * ( (uint16_t *) &buff[pos+1]);
+		update.addr = * ( (uint32_t *) &buff[pos+3]);
+		update.flags = buff[pos+7];
+		update.success_count = buff[pos+8];
+		update.last = buff[pos+9];
+		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
+	
 
-		update.size = * ( (uint16_t *) &buff[1]);
-		update.addr = * ( (uint32_t *) &buff[3]);
-		update.flags = buff[7];
-		update.success_count = ( (uint16_t) buff[8] << 8) | buff[9];
-
-
+#if CRC
+	
+		uint16_t  crc=0;
+		uint8_t i=0;
+		for (; i < update.size; i++) {
+			LED_1_TOGGLE();
+			update_read_block[method] (update.addr + i, (uint8_t *) buff);
+			crc=crc16_calc(buff,512,crc);
+		}
+		crc=crc16_calc((uint8_t*)&update.crc_sum,2,crc);
+		return crc;
+	
+		
+#else
 		//memcpy (&buff[1], &update, sizeof (update_t));
 		update_read_block[method] ( ( (uint32_t) update.size + update.addr + 1) , buff);
 		if ( (buff[0] == MAGIC_NUM)) {
-			if (update.size == * ( (uint16_t *) &buff[1])) {
-				if (update.addr == * ( (uint32_t *) &buff[3])) {
+			if (update.size == * ( (uint16_t *) &buff[pos+1])) {
+				if (update.addr == * ( (uint32_t *) &buff[pos+3])) {
 					return 0; //success
 				}else{
 					return 5;
@@ -110,6 +130,7 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr)
 		} else {
 			return 3;
 		}
+#endif
 
 
 	} else {
@@ -124,20 +145,25 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	uint32_t flash_addr = 0;
 	uint16_t buff[256];
 	uint16_t i = 0;
+	erase_flash();
 #if BACKUP
 	update_backup (method, 512, (update.addr + update.size) * 512);
 #endif
-	uart_TXchar (update.size >> 8);
-	uart_TXchar (update.size);
-	for (; i < update.size; i += 512) {
+	//uart_TXchar (update.size >> 8);
+	//uart_TXchar (update.size);
+	for (; i < update.size; i++) {
 		LED_2_TOGGLE();
+		//uart_TXchar('A');
 		update_read_block[method] (update.addr + i, (uint8_t *) buff);
+		//uart_TXchar('M');
 		page_write (PAGESIZE, buff, 'F', &flash_addr);
-		page_write (PAGESIZE, buff + PAGESIZE * 2, 'F', &flash_addr);
+		//uart_TXchar('W');
+		page_write (PAGESIZE, buff + (PAGESIZE/2), 'F', &flash_addr);
+		//uart_TXchar('E');
 	}
-	update.success_count++;
-	memset (buff, 0, 512);
-	buff[0] = MAGIC_NUM;
+	//update.success_count++;
+	//memset (buff, 0, 512);
+	//buff[0] = MAGIC_NUM;
 #if 0
 	//size
 	* ( (uint16_t *) &buff[1]) = update.size;
@@ -148,7 +174,7 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	//success_count
 	* ( (uint16_t *) &buff[8]) = update.success_count;
 #endif
-	memcpy (&buff[1], &update, sizeof (update_t));
+	//memcpy (&buff[1], &update, sizeof (update_t));
 //	update_write_block[method] (header_addr, buff);
 //	update_write_block[method] ( ( (uint32_t) update.size * 512) + update.addr, buff);
 }

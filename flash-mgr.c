@@ -193,7 +193,7 @@ uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint
 		}
 		clear_local_buffer();
 		boot_page_write_safe ( tmp_address );
-		
+		boot_spm_busy_wait();
 		( *address ) += block_size;
 		( *address ) >>= 1;
 		

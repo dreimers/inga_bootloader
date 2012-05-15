@@ -98,29 +98,37 @@ int main ( void )
 	} else if ( flash_init==0) { 
 		if(sd_init==0){
 			update_method=1;
-			uart_TXchar('S');
+		//	uart_TXchar('S');
 		}else{
 			
-		uart_TXchar('E');
-		uart_TXchar('0'+sd_init);
+		//uart_TXchar('E');
+		//uart_TXchar('0'+sd_init);
 		}
 		
+		
+		uint8_t val_error =update_validate(update_method,0,0);
+		//uart_TXchar("V");
+		//uart_TXchar(update_method);
+		//uart_TXchar(val_error);
+		if(val_error==0){
 #if UPDATE_EVERYTIME
-		LED_2_ON();
-		start_bootloader = 2;
+			LED_2_ON();
+			start_bootloader = 2;
 #else
-		at45db_read_page_bypassed(AT45DB_PAGES-1,buffer);
-		uint8_t update_flag=buffer[0];
-		if(update_flag){
-			start_bootloader=2;
-			LED_2_ON();
-		}
-		if (BUTTON_PRESSED()){
-			start_bootloader=2;
-			LED_2_ON();
-		}
+			at45db_read_page_bypassed(AT45DB_PAGES-1,buffer);
+			uint8_t update_flag=buffer[0];
+			if(update_flag){
+				start_bootloader=2;
+				LED_2_ON();
+			}
+			if (BUTTON_PRESSED()){
+				start_bootloader=2;
+				LED_2_ON();
+			}
 #endif
-	} else if ( MCUSR & _BV ( EXTRF ) ) {
+		}
+	} 
+	if ( MCUSR & _BV ( EXTRF ) ) {
 		LED_1_ON();
 		tmp_SREG = SREG;
 		cli();
@@ -132,6 +140,7 @@ int main ( void )
 		TIMSK0 |= ( 1 << OCIE0A );
 		OCR0A  |= 100;
 		start_bootloader = 3;
+		//uart_TXchar(3);
 	}
 	//start_bootloader = 3;
 	
@@ -144,18 +153,14 @@ int main ( void )
 	frq_calib();
 	sei();
 	if( start_bootloader == 2){
-		uint8_t val_error =update_validate(update_method,0);
-		uart_TXchar("V");
-		uart_TXchar(update_method);
-		if( val_error == 0){
-			LED_2_TOGGLE();
-			LED_1_ON();
-			uart_TXchar('I');
-			update_install(update_method,0);
-			LED_1_OFF();
-		}
-	} else
-		if ( start_bootloader ==  3){
+		LED_2_TOGGLE();
+		LED_1_ON();
+		uart_TXchar('I');
+		update_install(update_method,0);
+		LED_1_OFF();
+		start_app();
+	} else if ( start_bootloader ==  3){
+		LED_2_ON();
 		while ( 1 ) {
 			uint16_t temp_int;
 			uint8_t val;
