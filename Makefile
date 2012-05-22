@@ -12,7 +12,7 @@ TARGET = main
 INCLUSDIRS=fat
 vpath %.c $(INCLUSDIRS)
 UPDATE_SRC= update_SD.c
-DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c
+DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c crc16.c
 SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) 
 #$(FATSRC)
 ASRC = 

@@ -6,7 +6,6 @@
 #define UPDATE_EVERYTIME 1
 #define BACKUP 0
 #define DBG 0
-#define CRC 1
 
 // // //
 

@@ -98,40 +98,23 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 		update.success_count = buff[pos+8];
 		update.last = buff[pos+9];
 		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
+		uart_TXchar(update.crc_sum >>8);
+		uart_TXchar(update.crc_sum &0xff);
 	
-
-#if CRC
-	
-		uint16_t  crc=0;
 		uint8_t i=0;
+		uint16_t  crc=0;
 		for (; i < update.size; i++) {
 			LED_1_TOGGLE();
-			update_read_block[method] (update.addr + i, (uint8_t *) buff);
-			crc=crc16_calc(buff,512,crc);
+			update_read_block[method] (update.addr + i, buff);
+			crc=crc16_calc(buff,511,crc);
 		}
-		crc=crc16_calc((uint8_t*)&update.crc_sum,2,crc);
+		uart_TXchar(crc >>8);
+		uart_TXchar(crc &0xff);
+		crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
+		uart_TXchar(crc >>8);
+		uart_TXchar(crc &0xff);
 		return crc;
-	
 		
-#else
-		//memcpy (&buff[1], &update, sizeof (update_t));
-		update_read_block[method] ( ( (uint32_t) update.size + update.addr + 1) , buff);
-		if ( (buff[0] == MAGIC_NUM)) {
-			if (update.size == * ( (uint16_t *) &buff[pos+1])) {
-				if (update.addr == * ( (uint32_t *) &buff[pos+3])) {
-					return 0; //success
-				}else{
-					return 5;
-				}
-			}else{
-				return 4;
-			}
-
-		} else {
-			return 3;
-		}
-#endif
-
 
 	} else {
 		return 2;
