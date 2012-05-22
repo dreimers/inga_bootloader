@@ -98,8 +98,6 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 		update.success_count = buff[pos+8];
 		update.last = buff[pos+9];
 		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
-		uart_TXchar(update.crc_sum >>8);
-		uart_TXchar(update.crc_sum &0xff);
 	
 		uint8_t i=0;
 		uint16_t  crc=0;
@@ -108,11 +106,7 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 			update_read_block[method] (update.addr + i, buff);
 			crc=crc16_calc(buff,511,crc);
 		}
-		uart_TXchar(crc >>8);
-		uart_TXchar(crc &0xff);
 		crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
-		uart_TXchar(crc >>8);
-		uart_TXchar(crc &0xff);
 		return crc;
 		
 
