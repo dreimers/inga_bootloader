@@ -26,6 +26,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/boot.h>
+#include <avr/wdt.h>
 
 #include "uart.h"
 #include "frq-calib.h"
@@ -58,6 +59,13 @@
  */
 /*function pointer to address 0x0000 to start user application*/
 void ( *start_app ) ( void ) = 0x0000;
+
+void wdt_reboot(void){
+	wdt_enable(0);
+	while(1){
+	//	LED_1_TOGGLE();
+	}
+}
 
 int main ( void )
 {
@@ -157,8 +165,15 @@ int main ( void )
 		LED_1_ON();
 		uart_TXchar('I');
 		update_install(update_method,0);
-		LED_1_OFF();
+		microSD_deinit();
+		
+		_delay_ms(10); //wait until flash is ready 
+		boot_rww_enable_safe();
+
+		frq_calib_restore_osccl();
+		CALIB_FRQ_WAIT()
 		start_app();
+		//wdt_reboot();
 	} else if ( start_bootloader ==  3){
 		LED_2_ON();
 		while ( 1 ) {
