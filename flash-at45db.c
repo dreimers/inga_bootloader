@@ -133,10 +133,13 @@ void at45db_buffer_to_page(uint16_t addr) {
 #endif
 
 void at45db_write_page(uint32_t p_addr32,  uint8_t *buffer ) {
+	
 	uint16_t p_addr = (uint16_t) p_addr32;
 	uint16_t bytes=512;
 	uint16_t b_addr =0;
 	uint16_t i;
+	at45db_erase_page(p_addr);
+	
 	/*block erase command consists of 4 byte*/
 	uint8_t cmd[4] = { buffer_mgr.page_program[buffer_mgr.active_buffer],
 			(uint8_t) ( p_addr32 >> 6), ((uint8_t) ( p_addr32 << 2) & 0xFC) | ((uint8_t) (b_addr >> 8) & 0x3), (uint8_t) (b_addr) };
