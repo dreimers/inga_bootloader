@@ -7,6 +7,14 @@
 #define BACKUP 0
 #define DBG 0
 
+
+
+/*FLAGS*/
+#define NEW_FLAG 0
+#define SUCCESS_FLAG 1
+
+
+
 // // //
 
 struct update_s {
