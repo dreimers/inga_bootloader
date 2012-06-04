@@ -98,16 +98,21 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 		update.success_count = buff[pos+8];
 		update.last = buff[pos+9];
 		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
-	
-		uint8_t i=0;
-		uint16_t  crc=0;
-		for (; i < update.size; i++) {
-			LED_1_TOGGLE();
-			update_read_block[method] (update.addr + i, buff);
-			crc=crc16_calc(buff,511,crc);
+		if(update.flags & (1<<NEW_FLAG)){
+			uint8_t i=0;
+			uint16_t  crc=0;
+			for (; i < update.size; i++) {
+				LED_1_TOGGLE();
+				update_read_block[method] (update.addr + i, buff);
+				crc=crc16_calc(buff,511,crc);
+			}
+			crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
+			return crc;
+		}else if(!(update.flags & (1<<SUCCESS_FLAG)) && !method){
+			//update may failed 
+			return 4;
 		}
-		crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
-		return crc;
+		return 3;
 		
 
 	} else {
@@ -137,6 +142,13 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 		//uart_TXchar('W');
 		page_write (PAGESIZE, buff + (PAGESIZE/2), 'F', &flash_addr);
 		//uart_TXchar('E');
+	}
+	if(!method){
+		at45db_read_page_bypassed(BOOTLOADER_STOREAGE_HEADER_ADDR,(uint8_t *) buff);
+		update_t *tmp;
+		tmp = (update_t *)(((uint8_t *)buff)+1);
+		tmp->flags &= ~(1<<NEW_FLAG);
+		at45db_write_page(BOOTLOADER_STOREAGE_HEADER_ADDR,(uint8_t *) buff);
 	}
 	//update.success_count++;
 	//memset (buff, 0, 512);

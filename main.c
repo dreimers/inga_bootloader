@@ -114,7 +114,7 @@ int main ( void )
 		}
 		
 		
-		uint8_t val_error =update_validate(update_method,0,0);
+		uint8_t val_error =update_validate(update_method,BOOTLOADER_STOREAGE_HEADER_ADDR*(update_method^1),0);
 		//uart_TXchar("V");
 		//uart_TXchar(update_method);
 		//uart_TXchar(val_error);
@@ -165,7 +165,6 @@ int main ( void )
 		LED_1_ON();
 		uart_TXchar('I');
 		update_install(update_method,0);
-		microSD_deinit();
 		
 		_delay_ms(10); //wait until flash is ready 
 		boot_rww_enable_safe();

@@ -7,7 +7,7 @@
 #define BACKUP 0
 #define DBG 0
 
-
+#define BOOTLOADER_STOREAGE_HEADER_ADDR 0
 
 /*FLAGS*/
 #define NEW_FLAG 0
