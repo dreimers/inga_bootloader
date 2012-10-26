@@ -38,15 +38,12 @@ void uart_init(void) {
 }
 
 void uart_TXchar(uint8_t c) {
-	while (!(UCSR0A & (1 << UDRE0))) {
-	}
+	while (!(UCSR0A & (1 << UDRE0)));
 	UDR0 = c;
-	;
 }
 
 uint8_t uart_RXchar(void) {
-	while (!(UCSR0A & (1 << RXC0)))
-		;
+	while (!(UCSR0A & (1 << RXC0)));
 	return UDR0;
 }
 

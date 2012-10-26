@@ -30,6 +30,7 @@
 #include "frq-calib.h"
 #if TEST
 #define BAUDRATE_UART 	230400UL
+//#define BAUDRATE_UART	19200UL
 #else
 #define BAUDRATE_UART	19200UL
 #endif

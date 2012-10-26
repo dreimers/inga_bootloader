@@ -21,7 +21,7 @@ update_t update;
 void (*update_read_block[2]) (uint32_t , uint8_t *) = {at45db_read_page_bypassed, microSD_read_block};
 void (*update_write_block[2]) (uint32_t , uint8_t *) = {at45db_write_page, microSD_write_block};
 
-
+uint8_t g_pos;
 
 #if FORMAT
 void update_format (void)
@@ -85,27 +85,39 @@ uint16_t update_backup (uint8_t method, uint32_t header_addr, uint32_t backup_ad
 
 }
 #endif
+
 uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 {
 	uint8_t buff[512];
 	update_read_block[method] (header_addr, buff);
+	uint16_t d_count=0;
+	for(;d_count<12;d_count++){
+		uart_TXchar (buff[d_count]);
+	}
 	if (buff[0] == MAGIC_NUM) {
 
 		pos*=9;
+		g_pos=pos;
 		update.size = * ( (uint16_t *) &buff[pos+1]);
 		update.addr = * ( (uint32_t *) &buff[pos+3]);
 		update.flags = buff[pos+7];
-		update.success_count = buff[pos+8];
+		update.fail_count = buff[pos+8];
 		update.last = buff[pos+9];
 		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
 		if(update.flags & (1<<NEW_FLAG)){
-			uint8_t i=0;
+			uint16_t i=0;
 			uint16_t  crc=0;
+			uart_TXchar ('B');
 			for (; i < update.size; i++) {
 				LED_1_TOGGLE();
 				update_read_block[method] (update.addr + i, buff);
+				d_count=0;
+				for(;d_count<512;d_count++){
+					uart_TXchar (buff[d_count]);
+				}
 				crc=crc16_calc(buff,511,crc);
 			}
+			uart_TXchar ('B');
 			crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
 			return crc;
 		}else if(!(update.flags & (1<<SUCCESS_FLAG)) && !method){
@@ -126,7 +138,14 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 {
 	uint32_t flash_addr = 0;
 	uint16_t buff[256];
+	if(!method){
+		at45db_read_page_bypassed(header_addr,(uint8_t *) buff);
+		((uint8_t*)buff)[g_pos+7]|=PROCESS_FLAG;
+		at45db_erase_page(header_addr);
+		at45db_write_page(header_addr,(uint8_t *) buff);
+	}
 	uint16_t i = 0;
+	_delay_ms(500);
 	erase_flash();
 #if BACKUP
 	update_backup (method, 512, (update.addr + update.size) * 512);
@@ -135,21 +154,22 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	//uart_TXchar (update.size);
 	for (; i < update.size; i++) {
 		LED_2_TOGGLE();
-		//uart_TXchar('A');
+		uart_TXchar('A');
 		update_read_block[method] (update.addr + i, (uint8_t *) buff);
-		//uart_TXchar('M');
+		uart_TXchar('M');
 		page_write (PAGESIZE, buff, 'F', &flash_addr);
-		//uart_TXchar('W');
+		uart_TXchar('W');
 		page_write (PAGESIZE, buff + (PAGESIZE/2), 'F', &flash_addr);
-		//uart_TXchar('E');
+		uart_TXchar('E');
 	}
 	if(!method){
-		at45db_read_page_bypassed(BOOTLOADER_STOREAGE_HEADER_ADDR,(uint8_t *) buff);
+		at45db_read_page_bypassed(header_addr,(uint8_t *) buff);
 		update_t *tmp;
-		tmp = (update_t *)(((uint8_t *)buff)+1);
-		tmp->flags &= ~(1<<NEW_FLAG);
-		at45db_write_page(BOOTLOADER_STOREAGE_HEADER_ADDR,(uint8_t *) buff);
+		tmp = (update_t *)(((uint8_t *)buff)+1+g_pos);
+		tmp->flags &= ~(1<<NEW_FLAG)|(1<<PROCESS_FLAG);
+		at45db_write_page(header_addr,(uint8_t *) buff);
 	}
+	
 	//update.success_count++;
 	//memset (buff, 0, 512);
 	//buff[0] = MAGIC_NUM;

@@ -27,6 +27,7 @@
 #include <avr/interrupt.h>
 #include <avr/boot.h>
 #include <avr/wdt.h>
+#include <stdlib.h>
 
 #include "uart.h"
 #include "frq-calib.h"
@@ -69,6 +70,7 @@ void wdt_reboot(void){
 
 int main ( void )
 {
+	wdt_disable();
 	static uint32_t address;
 	uint8_t tmp_MCUCR, tmp_SREG;
 	uint8_t start_bootloader = 0;;
@@ -84,14 +86,19 @@ int main ( void )
 	mspi_transceive(0x04);
 	mspi_chip_release(2);
 	*/
+	frq_calib();
 	uart_init();
+	//uint8_t flash_init=1;
+	uint8_t sd_init =1;
 	uint8_t flash_init= at45db_init();
-	uint8_t sd_init= microSD_init(); 
+	//uint8_t sd_init= microSD_init(); 
 	uint8_t update_method=0;
+	
 	
 #if UPDATE_EVERYTIME
 #else
 	uint8_t buffer[512];
+	//memset(buffer,0,512);
 #endif
 	
 	if ( ( MCUSR & _BV ( PORF ) ) ) {
@@ -99,44 +106,7 @@ int main ( void )
 		MCUSR &=~ ( 1 << PORF );
 	}
 	//stay in bootloader conditions
-	if ( BUTTON_PRESSED() ) {
-		start_bootloader = 3;
-		LED_1_ON();
-	
-	} else if ( flash_init==0) { 
-		if(sd_init==0){
-			update_method=1;
-		//	uart_TXchar('S');
-		}else{
-			
-		//uart_TXchar('E');
-		//uart_TXchar('0'+sd_init);
-		}
-		
-		
-		uint8_t val_error =update_validate(update_method,BOOTLOADER_STOREAGE_HEADER_ADDR*(update_method^1),0);
-		//uart_TXchar("V");
-		//uart_TXchar(update_method);
-		//uart_TXchar(val_error);
-		if(val_error==0){
-#if UPDATE_EVERYTIME
-			LED_2_ON();
-			start_bootloader = 2;
-#else
-			at45db_read_page_bypassed(AT45DB_PAGES-1,buffer);
-			uint8_t update_flag=buffer[0];
-			if(update_flag){
-				start_bootloader=2;
-				LED_2_ON();
-			}
-			if (BUTTON_PRESSED()){
-				start_bootloader=2;
-				LED_2_ON();
-			}
-#endif
-		}
-	} 
-	if ( MCUSR & _BV ( EXTRF ) ) {
+	if (( MCUSR & _BV ( EXTRF ) )) {
 		LED_1_ON();
 		tmp_SREG = SREG;
 		cli();
@@ -148,22 +118,75 @@ int main ( void )
 		TIMSK0 |= ( 1 << OCIE0A );
 		OCR0A  |= 100;
 		start_bootloader = 3;
-		//uart_TXchar(3);
+		uart_TXchar(3);
 	}
+	if ( BUTTON_PRESSED() ) {
+		start_bootloader = 3;
+		LED_1_ON();
+	
+	} else if ( flash_init==0) { 
+		if(sd_init==0){
+			update_method=1;  //SD-MODE
+		//	uart_TXchar('S');
+		}else{
+			at45db_read_page_bypassed(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
+			uint8_t i=0;
+			for(;i<12;i++){
+				uart_TXchar(buffer[i]);
+			}
+		}
+		
+		uint8_t val_error =update_validate(update_method,BOOTLOADER_STORAGE_HEADER_ADDR*(update_method^1),buffer[1]);
+		uart_TXchar('V');
+		uart_TXchar('V');
+		uart_TXchar('V');
+		uart_TXchar('V');
+		//uart_TXchar(update_method);
+		//uart_TXchar(val_error);
+#if UPDATE_EVERYTIME
+		if(update_method&&((val_error==3)||(val_error==0))){
+			LED_2_ON();
+			start_bootloader = 2;
+		}
+#else
+		if(val_error==0&&(update_method||(buffer[0]))){
+			LED_2_ON();
+			uart_TXchar('A');
+			start_bootloader=2;
+			LED_2_ON();
+		}else{
+			uart_TXchar('E');
+			uart_TXchar(val_error);
+			uart_TXchar(update_method);
+			uart_TXchar(buffer[0]);
+			uart_TXchar('E');
+			
+			_delay_ms(500);
+			
+			if (BUTTON_PRESSED()){
+				start_bootloader=2;
+				LED_2_ON();
+			}
+		}
+		
+#endif
+	} 
 	//start_bootloader = 3;
 	
 	if ( !start_bootloader ) {
+		LED_1_OFF();
+		uart_TXchar('0');
+		LED_2_OFF();
+		frq_calib_restore_osccl();
+		CALIB_FRQ_WAIT()
 		start_app();
 	}
 
 
 	clear_local_buffer();
-	frq_calib();
 	sei();
 	if( start_bootloader == 2){
-		LED_2_TOGGLE();
-		LED_1_ON();
-		uart_TXchar('I');
+		uart_TXchar('2');
 		update_install(update_method,0);
 		
 		_delay_ms(10); //wait until flash is ready 
