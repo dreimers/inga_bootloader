@@ -58,9 +58,25 @@
  *
  *
  */
-/*function pointer to address 0x0000 to start user application*/
-void ( *start_app ) ( void ) = 0x0000;
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
+void wdt_init(void)
+{
+    MCUSR&=~(1<<3);
+    wdt_disable();
+
+    return;
+}
+/*function pointer to address 0x0000 to start user application*/
+//void ( *start_app ) ( void ) = 0x0001;
+void start_app(void){
+	cli();
+	MCUCR = (1<<IVCE);
+	MCUCR = 0;
+	asm volatile("jmp 0000");
+
+
+}
 void wdt_reboot(void){
 	wdt_enable(0);
 	while(1){
@@ -70,14 +86,15 @@ void wdt_reboot(void){
 
 int main ( void )
 {
-	wdt_disable();
+	LED_INIT();
+	LED_2_ON();
+	
 	static uint32_t address;
 	uint8_t tmp_MCUCR, tmp_SREG;
 	uint8_t start_bootloader = 0;;
-	LED_INIT();
 	BUTTON_INIT();
 	LED_1_OFF();
-	LED_2_OFF();
+//	LED_2_OFF();
 	// set adxl345 in sleep mode
 	/*mspi_init(2,3,3);
 	mspi_chip_select(2);
@@ -107,7 +124,6 @@ int main ( void )
 	}
 	//stay in bootloader conditions
 	if (( MCUSR & _BV ( EXTRF ) )) {
-		LED_1_ON();
 		tmp_SREG = SREG;
 		cli();
 		tmp_MCUCR = MCUCR;
@@ -118,13 +134,14 @@ int main ( void )
 		TIMSK0 |= ( 1 << OCIE0A );
 		OCR0A  |= 100;
 		start_bootloader = 3;
-		uart_TXchar(3);
+		//uart_TXchar(3);
 	}
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 3;
 		LED_1_ON();
 	
-	} else if ( flash_init==0) { 
+	} else if ( (flash_init==0)&&(!start_bootloader)) { 
+		LED_1_ON();
 		if(sd_init==0){
 			update_method=1;  //SD-MODE
 		//	uart_TXchar('S');
@@ -132,15 +149,12 @@ int main ( void )
 			at45db_read_page_bypassed(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
 			uint8_t i=0;
 			for(;i<12;i++){
-				uart_TXchar(buffer[i]);
+				//uart_TXchar(buffer[i]);
 			}
 		}
 		
 		uint8_t val_error =update_validate(update_method,BOOTLOADER_STORAGE_HEADER_ADDR*(update_method^1),buffer[1]);
-		uart_TXchar('V');
-		uart_TXchar('V');
-		uart_TXchar('V');
-		uart_TXchar('V');
+		//LED_1_ON();
 		//uart_TXchar(update_method);
 		//uart_TXchar(val_error);
 #if UPDATE_EVERYTIME
@@ -151,18 +165,10 @@ int main ( void )
 #else
 		if(val_error==0&&(update_method||(buffer[0]))){
 			LED_2_ON();
-			uart_TXchar('A');
+			//uart_TXchar('A');
 			start_bootloader=2;
 			LED_2_ON();
 		}else{
-			uart_TXchar('E');
-			uart_TXchar(val_error);
-			uart_TXchar(update_method);
-			uart_TXchar(buffer[0]);
-			uart_TXchar('E');
-			
-			_delay_ms(500);
-			
 			if (BUTTON_PRESSED()){
 				start_bootloader=2;
 				LED_2_ON();
@@ -175,7 +181,7 @@ int main ( void )
 	
 	if ( !start_bootloader ) {
 		LED_1_OFF();
-		uart_TXchar('0');
+	//	uart_TXchar('0');
 		LED_2_OFF();
 		frq_calib_restore_osccl();
 		CALIB_FRQ_WAIT()
@@ -186,7 +192,7 @@ int main ( void )
 	clear_local_buffer();
 	sei();
 	if( start_bootloader == 2){
-		uart_TXchar('2');
+		//uart_TXchar('2');
 		update_install(update_method,0);
 		
 		_delay_ms(10); //wait until flash is ready 
@@ -194,6 +200,8 @@ int main ( void )
 
 		frq_calib_restore_osccl();
 		CALIB_FRQ_WAIT()
+		//uart_TXchar('L');
+		//wdt_reboot();
 		start_app();
 		//wdt_reboot();
 	} else if ( start_bootloader ==  3){
