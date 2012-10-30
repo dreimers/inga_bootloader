@@ -91,17 +91,14 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 	uint8_t buff[512];
 	update_read_block[method] (header_addr, buff);
 	uint16_t d_count=0;
-	for(;d_count<12;d_count++){
-		uart_TXchar (buff[d_count]);
-	}
 	if (buff[0] == MAGIC_NUM) {
 
-		pos*=9;
+		pos*=sizeof(update_t);
 		g_pos=pos;
 		update.size = * ( (uint16_t *) &buff[pos+1]);
 		update.addr = * ( (uint32_t *) &buff[pos+3]);
 		update.flags = buff[pos+7];
-		update.fail_count = buff[pos+8];
+		update.fail_count = buff[pos+8]+1;
 		update.last = buff[pos+9];
 		update.crc_sum = * ( (uint16_t *) &buff[pos+10]);
 		if(update.flags & (1<<NEW_FLAG)){
@@ -138,7 +135,10 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 	uint16_t buff[256];
 	if(!method){
 		at45db_read_page_bypassed(header_addr,(uint8_t *) buff);
-		((uint8_t*)buff)[g_pos+7]|=PROCESS_FLAG;
+		update_t *tmp;
+		tmp=(update_t*)(((uint8_t*)buff)+g_pos+1);
+		tmp->flags|=PROCESS_FLAG;
+		tmp->fail_count=update.fail_count;
 		at45db_erase_page(header_addr);
 		at45db_write_page(header_addr,(uint8_t *) buff);
 	}
@@ -164,7 +164,7 @@ uint8_t update_install (uint8_t method, uint32_t header_addr)
 		at45db_read_page_bypassed(header_addr,(uint8_t *) buff);
 		update_t *tmp;
 		tmp = (update_t *)(((uint8_t *)buff)+1+g_pos);
-		tmp->flags &= ~(1<<NEW_FLAG)|(1<<PROCESS_FLAG);
+		tmp->flags &= ~(1<<PROCESS_FLAG);
 		at45db_write_page(header_addr,(uint8_t *) buff);
 	}
 	

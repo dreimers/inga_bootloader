@@ -58,6 +58,12 @@
  *
  *
  */
+
+
+/******************VERY IMPORTANT********************************************
+ * this code block is necessary to prevent the processor to run into watchdog-reset-lifelock 
+ * do NOT delete this block
+****************************************************************************/
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
 void wdt_init(void)
@@ -67,6 +73,8 @@ void wdt_init(void)
 
     return;
 }
+/*******************end of very important block***************************/
+
 /*function pointer to address 0x0000 to start user application*/
 //void ( *start_app ) ( void ) = 0x0001;
 void start_app(void){
@@ -147,9 +155,10 @@ int main ( void )
 		//	uart_TXchar('S');
 		}else{
 			at45db_read_page_bypassed(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
-			uint8_t i=0;
-			for(;i<12;i++){
-				//uart_TXchar(buffer[i]);
+			if(!buffer[0]){ //flash-flag not set
+				frq_calib_restore_osccl();
+				CALIB_FRQ_WAIT()
+				start_app();
 			}
 		}
 		
