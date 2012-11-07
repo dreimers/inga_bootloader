@@ -156,6 +156,8 @@ int main ( void )
 		}else{
 			at45db_read_page_bypassed(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
 			if(!buffer[0]){ //flash-flag not set
+				uart_TXchar('E');
+				_delay_ms(1000);
 				frq_calib_restore_osccl();
 				CALIB_FRQ_WAIT()
 				start_app();
@@ -164,8 +166,6 @@ int main ( void )
 		
 		uint8_t val_error =update_validate(update_method,BOOTLOADER_STORAGE_HEADER_ADDR*(update_method^1),buffer[1]);
 		//LED_1_ON();
-		//uart_TXchar(update_method);
-		//uart_TXchar(val_error);
 #if UPDATE_EVERYTIME
 		if(update_method&&((val_error==3)||(val_error==0))){
 			LED_2_ON();
@@ -190,7 +190,8 @@ int main ( void )
 	
 	if ( !start_bootloader ) {
 		LED_1_OFF();
-	//	uart_TXchar('0');
+		uart_TXchar('0');
+		_delay_ms(1000);
 		LED_2_OFF();
 		frq_calib_restore_osccl();
 		CALIB_FRQ_WAIT()
@@ -201,7 +202,8 @@ int main ( void )
 	clear_local_buffer();
 	sei();
 	if( start_bootloader == 2){
-		//uart_TXchar('2');
+		uart_TXchar('2');
+		_delay_ms(1000);
 		update_install(update_method,0);
 		
 		_delay_ms(10); //wait until flash is ready 

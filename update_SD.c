@@ -96,6 +96,7 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 		pos*=sizeof(update_t);
 		g_pos=pos;
 		update.size = * ( (uint16_t *) &buff[pos+1]);
+		
 		update.addr = * ( (uint32_t *) &buff[pos+3]);
 		update.flags = buff[pos+7];
 		update.fail_count = buff[pos+8]+1;
@@ -107,10 +108,11 @@ uint8_t update_validate (uint8_t method, uint32_t header_addr, uint8_t pos)
 			for (; i < update.size; i++) {
 				//LED_1_TOGGLE();
 				update_read_block[method] (update.addr + i, buff);
-				d_count=0;
-				//for(;d_count<512;d_count++){
-				//	uart_TXchar (buff[d_count]);
-				//}
+			/*	d_count=0;
+				for(;d_count<512;d_count++){
+					uart_TXchar (buff[d_count]);
+				}
+			*/
 				crc=crc16_calc(buff,511,crc);
 			}
 			crc=crc16_calc((uint8_t*)&update.crc_sum,1,crc);
