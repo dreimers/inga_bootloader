@@ -64,15 +64,15 @@ void uart_TXchar(uint8_t c) {
 	/*if(channel==0){
 		while (!(UCSR0A & (1 << UDRE0)));
 		UDR0 = c;
-	}else if(channel==1){*/
+	/}else if(channel==1){
 		while (!(UCSR1A & (1 << UDRE1)));
 		UDR1 = c;
-	/*}else{
+	}else{*/
 		while (!(UCSR0A & (1 << UDRE0)));
 		UDR0 = c;
 		while (!(UCSR1A & (1 << UDRE1)));
 		UDR1 = c;
-	}*/
+	//}
 }
 
 uint8_t uart_RXchar(void) {
@@ -80,11 +80,11 @@ uint8_t uart_RXchar(void) {
 	/*if(channel==0){
 		while (!(UCSR0A & (1 << RXC0)));
 		return UDR0;
-	}else if(channel == 1){*/
+	}else if(channel == 1){
 		while (!(UCSR1A & (1 << RXC1))) {
 		}
 		return UDR1;
-	/*}else{
+	}else{*/
 		while ((!(UCSR1A & (1 << RXC1))) && (!(UCSR0A & (1 << RXC0))));
 		if((UCSR1A & (1 << RXC1))){
 			channel=1;
@@ -93,6 +93,6 @@ uint8_t uart_RXchar(void) {
 			channel=0;
 			return UDR0;
 		}
-	}*/
+	//}
 }
 
