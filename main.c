@@ -113,6 +113,7 @@ int main ( void )
 	*/
 	frq_calib();
 	uart_init();
+	//uart_TXchar(0xaa);
 	//uint8_t flash_init=1;
 	uint8_t sd_init =1;
 	uint8_t flash_init= at45db_init();
@@ -155,6 +156,11 @@ int main ( void )
 		//	uart_TXchar('S');
 		}else{
 			at45db_read_page_bypassed(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
+			if(buffer[3]!=OSCCAL){
+				buffer[3]=OSCCAL;
+				at45db_erase_page(BOOTLOADER_STORAGE_INFO_ADDR);
+				at45db_write_page(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
+			}
 			if(!buffer[0]){ //flash-flag not set
 				uart_TXchar('E');
 				_delay_ms(1000);
@@ -217,6 +223,7 @@ int main ( void )
 		//wdt_reboot();
 	} else if ( start_bootloader ==  3){
 		LED_2_ON();
+		uart_init();
 		while ( 1 ) {
 			uint16_t temp_int;
 			uint8_t val;
