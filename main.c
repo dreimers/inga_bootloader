@@ -112,7 +112,6 @@ int main ( void )
 	mspi_chip_release(2);
 	*/
 	frq_calib();
-	uart_init();
 	//uart_TXchar(0xaa);
 	//uint8_t flash_init=1;
 	uint8_t sd_init =1;
@@ -147,10 +146,8 @@ int main ( void )
 	}
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 3;
-		LED_1_ON();
 	
 	} else if ( (flash_init==0)&&(!start_bootloader)) { 
-		LED_1_ON();
 		if(sd_init==0){
 			update_method=1;  //SD-MODE
 		//	uart_TXchar('S');
@@ -162,7 +159,7 @@ int main ( void )
 				at45db_write_page(BOOTLOADER_STORAGE_INFO_ADDR,buffer);
 			}
 			if(!buffer[0]){ //flash-flag not set
-				uart_TXchar('E');
+				//uart_TXchar('E');
 				_delay_ms(1000);
 				frq_calib_restore_osccl();
 				CALIB_FRQ_WAIT()
@@ -196,8 +193,8 @@ int main ( void )
 	
 	if ( !start_bootloader ) {
 		LED_1_OFF();
-		uart_TXchar('0');
-		_delay_ms(1000);
+		//uart_TXchar('0');
+		//_delay_ms(1000);
 		LED_2_OFF();
 		frq_calib_restore_osccl();
 		CALIB_FRQ_WAIT()
@@ -208,8 +205,8 @@ int main ( void )
 	clear_local_buffer();
 	sei();
 	if( start_bootloader == 2){
-		uart_TXchar('2');
-		_delay_ms(1000);
+		//uart_TXchar('2');
+		//_delay_ms(1000);
 		update_install(update_method,0);
 		
 		_delay_ms(10); //wait until flash is ready 
@@ -331,6 +328,7 @@ int main ( void )
 				frq_calib_restore_osccl();
 				CALIB_FRQ_WAIT()
 				LED_1_OFF();
+				uart_deinit();
 				start_app();
 				break;
 			default:

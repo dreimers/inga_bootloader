@@ -32,14 +32,19 @@
 #define LED_1_TOGGLE()		PORTD ^= (1 << PD5);
 #define LED_2_TOGGLE()		PORTD ^= (1 << PD7);
 uint8_t channel = 2;
+uint8_t h,l,b,c;
 
 void uart_init(void) {
 
-	DDRA|=0xe0;
-	PORTA= 0;
+	//DDRA|=0xe0;
+	//PORTA= 0;
+	h=UBRR0H;
+	l=UBRR0L;
+	b=UCSR0B;
+	c=UCSR0C;
 	UBRR0H = (uint8_t) (UBRR_UART >> 8);
 	UBRR0L = (uint8_t) UBRR_UART;
-
+	
 	UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 
@@ -59,7 +64,14 @@ void uart_init(void) {
 		UDR1;
 	} while (UCSR1A & (1 << RXC1));
 }
-
+void uart_deinit(void)
+{
+	UBRR1H =h;
+	UBRR1L =l;
+	UCSR1B =b;
+	UCSR1C =c;
+	UDR1;
+}
 void uart_TXchar(uint8_t c) {
 	/*if(channel==0){
 		while (!(UCSR0A & (1 << UDRE0)));

@@ -39,6 +39,7 @@
 
 void uart_init(void);
 
+void uart_deinit(void);
 void uart_TXchar(uint8_t c);
 
 uint8_t uart_RXchar(void);
