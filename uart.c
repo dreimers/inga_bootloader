@@ -70,7 +70,12 @@ void uart_deinit(void)
 	UBRR1L =l;
 	UCSR1B =b;
 	UCSR1C =c;
-	UDR1;
+	do {
+		UDR1;
+	} while (UCSR1A & (1 << RXC1));
+	do {
+		UDR0;
+	} while (UCSR0A & (1 << RXC0));
 }
 void uart_TXchar(uint8_t c) {
 	/*if(channel==0){

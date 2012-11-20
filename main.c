@@ -144,6 +144,8 @@ int main ( void )
 		start_bootloader = 3;
 		//uart_TXchar(3);
 	}
+	LED_1_ON();
+	LED_2_ON();
 	if ( BUTTON_PRESSED() ) {
 		start_bootloader = 3;
 	
@@ -160,7 +162,6 @@ int main ( void )
 			}
 			if(!buffer[0]){ //flash-flag not set
 				//uart_TXchar('E');
-				_delay_ms(1000);
 				frq_calib_restore_osccl();
 				CALIB_FRQ_WAIT()
 				start_app();
@@ -192,9 +193,9 @@ int main ( void )
 	//start_bootloader = 3;
 	
 	if ( !start_bootloader ) {
-		LED_1_OFF();
+		LED_1_ON();
 		//uart_TXchar('0');
-		//_delay_ms(1000);
+		_delay_ms(1000);
 		LED_2_OFF();
 		frq_calib_restore_osccl();
 		CALIB_FRQ_WAIT()
@@ -318,17 +319,21 @@ int main ( void )
 				uart_TXchar ( '\r' );
 				break;
 			case 'L':
+				LED_2_ON();
 				uart_TXchar ( '\r' ); // Nothing special to do, just answer OK.
 				break;
 			case 'E':
+				LED_1_OFF();
+				
+				cli();
 				uart_TXchar ( '\r' );
 				_delay_ms ( 1 );
 				boot_rww_enable_safe();
 
 				frq_calib_restore_osccl();
 				CALIB_FRQ_WAIT()
-				LED_1_OFF();
 				uart_deinit();
+				//wdt_reboot();
 				start_app();
 				break;
 			default:
