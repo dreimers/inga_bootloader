@@ -84,7 +84,6 @@ EXTMEMOPTS =
 
 #LDMAP = $(LDFLAGS) -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS = $(EXTMEMOPTS) $(LDMAP) $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB) 
-ifeq ($(BL),1)
 CFLAGS += -DBL -fpack-struct
 BOOTSTART = 0x1E000
 LDFLAGS += -Wl,--section-start=.text=$(BOOTSTART)
@@ -93,11 +92,6 @@ LDFLAGS += -Wl,--section-start=.text=$(BOOTSTART)
 
 AVRDUDE_PROGRAMMER = jtag2
 AVRDUDE_PORT = usb 
-else
-AVRDUDE_PROGRAMMER=avr109
-AVRDUDE_OPTIONS=-b 230400
-AVRDUDE_PORT = $(MOTE)
-endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 
