@@ -36,7 +36,6 @@
 #include "flash-at45db.h"
 #include "update.h"
 #include "update_SD.h"
-#include "diskio.h"
 #include "mspi-drv.h"
 
 
