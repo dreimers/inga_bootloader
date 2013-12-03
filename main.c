@@ -314,8 +314,12 @@ int main ( void )
 				val = uart_RXchar(); //mem type
 				
 				//uart_TXchar(update_b_size>>8);
-				page_write ( temp_int,0, val, &address );
-				uart_TXchar ( '\r' );
+				uint16_t r = page_write ( temp_int,0, val, &address );
+				if( r>0 ){
+					uart_TXchar ( '\r' );
+				}else{
+					uart_TXchar ( '?' );
+				}
 				
 
 				break;

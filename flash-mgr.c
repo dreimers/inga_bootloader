@@ -173,6 +173,9 @@ uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint
 	case 'F':
 		( *address ) <<= 1; // Convert address to bytes temporarily.
 		tmp_address = ( *address ); // Store address in page.
+		if(((uint32_t)tmp_address + (uint32_t)b_size) > 0x1e000){ //prevent bootloader from over writing it self
+			return 0;
+		}
 		uint16_t i = 0;
 		uint16_t block_size = b_size;
 		uint16_t data;
@@ -196,6 +199,7 @@ uint16_t page_write( uint16_t b_size, uint16_t *data_ptr, uint8_t mem_type, uint
 		boot_spm_busy_wait();
 		( *address ) += block_size;
 		( *address ) >>= 1;
+		b_size = block_size;
 		
 		break;
 	}
