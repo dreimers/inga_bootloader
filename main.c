@@ -114,8 +114,13 @@ int main ( void )
 	//uart_TXchar(0xaa);
 	//uint8_t flash_init=1;
 	uint8_t sd_init =1;
-	uint8_t flash_init= at45db_init();
-	//uint8_t sd_init= microSD_init(); 
+	uint8_t flash_init = 1;
+#if FLASH_UPDATE
+	flash_init= at45db_init();
+#endif
+#if SD_UPDATE
+	sd_init= microSD_init(); 
+#endif
 	uint8_t update_method=0;
 	
 	

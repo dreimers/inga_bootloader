@@ -3,6 +3,8 @@
 
 #define INTERNAL_FLASH_SIZE 1000
 
+#define SD_UPDATE 0
+#define FLASH_UPDATE 0
 #define UPDATE_EVERYTIME 0
 #define BACKUP 0
 #define DBG 0
