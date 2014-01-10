@@ -157,7 +157,7 @@ program: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
 fuses:
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:0xe2:m -U hfuse:w:0x90:m -U efuse:w:0xfe:m	
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m	
 
 size: $(TARGET).elf
 	avr-size $(TARGET).elf
