@@ -292,9 +292,9 @@ int main ( void )
 				uart_TXchar ( '4' );
 				break;
 			case 's':
-				uart_TXchar ( 0x05 );
-				uart_TXchar ( 0x97 );
-				uart_TXchar ( 0x1E );
+				uart_TXchar ( SIGNATURE_2 );
+				uart_TXchar ( SIGNATURE_1 );
+				uart_TXchar ( SIGNATURE_0 );
 				break;
 			case 't':
 				uart_TXchar ( 0 );
