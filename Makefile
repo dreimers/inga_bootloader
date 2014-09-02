@@ -162,7 +162,17 @@ fuses:
 size: $(TARGET).elf
 	avr-size $(TARGET).elf
 
+program.bang: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -b 50000
 
+fuses.bang:
+	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m -b 1000
+
+bang: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -b 1000
+	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m -b 1000
+	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -b 50000
+	
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \
 --change-section-address .data-0x800000 \
