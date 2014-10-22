@@ -6,6 +6,10 @@
 
 
 MCU = atmega1284p
+LFUSE = 0xe2
+HFUSE = 0x10
+EFUSE = 0xfe
+
 FORMAT = ihex
 TARGET = main
 -include fat/Makefile.fat
@@ -94,7 +98,7 @@ AVRDUDE_PROGRAMMER = jtag2
 AVRDUDE_PORT = usb 
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-
+AVRDUDE_OPTIONS =
 
 # Uncomment the following if you want avrdude's erase cycle counter.
 # Note that this counter needs to be initialized first using -Yn,
@@ -110,9 +114,14 @@ AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 # to submit bug reports.
 #AVRDUDE_VERBOSE = -v -v
 
-AVRDUDE_BASIC = -p $(MCU) -E vcc -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_OPTIONS)
+AVRDUDE_BASIC = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_OPTIONS)
 AVRDUDE_FLAGS = $(AVRDUDE_BASIC) $(AVRDUDE_NO_VERIFY) $(AVRDUDE_VERBOSE) $(AVRDUDE_ERASE_COUNTER)
 
+ifdef SERIAL
+AVRDUDE_BB_FLAGS = -x serial="$(SERIAL)"
+endif
+
+AVRDUDE_BB_FLAGS += -C +./avrdude_bitbang.conf
 
 CC = avr-gcc
 OBJCOPY = avr-objcopy
@@ -151,27 +160,32 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss 
 sym: $(TARGET).sym
 
-
-# Program the device.  
+# Only program bootloader
 program: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
+# Only set fuses
 fuses:
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m	
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m	
 
+# Get size of elf file
 size: $(TARGET).elf
 	avr-size $(TARGET).elf
 
+# Only program bootloader with bitbang
 program.bang: $(TARGET).hex $(TARGET).eep
-	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -b 50000
+	$(AVRDUDE) -c inga -p $(MCU) $(AVRDUDE_BB_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -b 50000
 
+# Only set fuses with bitbang
 fuses.bang:
-	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m -b 1000
+	$(AVRDUDE) -c inga -p $(MCU) $(AVRDUDE_BB_FLAGS) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m -b 50000
 
-bang: $(TARGET).hex $(TARGET).eep
-	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -b 1000
-	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf -U lfuse:w:0xe2:m -U hfuse:w:0x10:m -U efuse:w:0xfe:m -b 1000
-	$(AVRDUDE) -c inga -p $(MCU) -C +./avrdude_bitbang.conf $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) -b 50000
+# Open device in bitbang mode with a slow clock to get in working later at normal clock
+bitbang_workaround:
+	$(AVRDUDE) -c inga -p $(MCU) $(AVRDUDE_BB_FLAGS) -b 1000
+
+# Flash fuses and program bootloader
+bang: $(TARGET).hex $(TARGET).eep bitbang_workaround fuses.bang program.bang
 	
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \
