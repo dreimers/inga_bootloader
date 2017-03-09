@@ -64,6 +64,7 @@ void uart_init(void) {
 		UDR1;
 	} while (UCSR1A & (1 << RXC1));
 }
+
 void uart_deinit(void)
 {
 	UBRR1H =h;

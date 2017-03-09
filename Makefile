@@ -7,7 +7,7 @@
 
 MCU = atmega1284p
 LFUSE = 0xe2
-HFUSE = 0x10
+HFUSE = 0xd0
 EFUSE = 0xfe
 
 FORMAT = ihex
@@ -15,8 +15,8 @@ TARGET = main
 -include fat/Makefile.fat
 INCLUSDIRS=fat
 vpath %.c $(INCLUSDIRS)
-UPDATE_SRC= update_SD.c
-DRV_SRC= flash-mgr.c frq-calib.c uart.c flash-microSD.c mspi-drv.c flash-at45db.c crc16.c
+UPDATE_SRC= 
+DRV_SRC= flash-mgr.c uart.c crc16.c vscale.c i2c.c
 SRC = $(TARGET).c  $(DRV_SRC) $(UPDATE_SRC) 
 #$(FATSRC)
 ASRC = 

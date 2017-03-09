@@ -25,16 +25,13 @@
 
 #ifndef UART_H_
 #define UART_H_
-#define TEST 1 
 #include <avr/io.h>
 #include "frq-calib.h"
-#if TEST
-#define BAUDRATE_UART 	230400UL
+//#define BAUDRATE_UART 	230400UL
+#define BAUDRATE_UART 	250000UL
 //#define BAUDRATE_UART	19200UL
-#else
-#define BAUDRATE_UART	19200UL
-#endif
-#define UBRR_UART  		((CALIB_FRQ_CLAIMED)/(BAUDRATE_UART * 16) -1)
+
+#define UBRR_UART  		((F_CPU)/(BAUDRATE_UART * 16) -1)
 
 
 void uart_init(void);
