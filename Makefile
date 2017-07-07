@@ -95,6 +95,19 @@ LDFLAGS += -Wl,--section-start=.text=$(BOOTSTART)
 # Programming support using avrdude. Settings and variables.
 
 AVRDUDE_PROGRAMMER = jtag2
+# number of bits every avr shifts the jtag commands
+JTAG_BITSHIFT=4
+# number of devices in the chain
+JTAG_LENGTH=8
+# avrs before target device
+JTAG_UB=$(JTAG_DEVICE)
+# avrs after target device
+JTAG_UA=$(shell echo $(JTAG_LENGTH)\-$(JTAG_DEVICE)\-1 | bc)
+# bits before target device
+JTAG_BB=$(shell echo $(JTAG_UB)\*$(JTAG_BITSHIFT) | bc)
+# bits after target device
+JTAG_BA=$(shell echo $(JTAG_UA)\*$(JTAG_BITSHIFT) | bc)
+
 AVRDUDE_PORT = usb 
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
@@ -162,11 +175,23 @@ sym: $(TARGET).sym
 
 # Only program bootloader
 program: $(TARGET).hex $(TARGET).eep
+ifndef JTAG_DEVICE
+	@echo "JTAG: no device specified, assuming single device"
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
+else
+	@echo "JTAG: DEVICE = $(JTAG_DEVICE) (position in daisy chain), JTAG_LENGTH = $(JTAG_LENGTH) (length of daisy chain)"
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -x jtagchain=$(JTAG_UB),$(JTAG_UA),$(JTAG_BB),$(JTAG_BA) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
+endif
 
 # Only set fuses
 fuses:
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m	
+ifndef JTAG_DEVICE
+	@echo "JTAG: no device specified, assuming single device"
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
+else
+	@echo "JTAG: DEVICE = $(JTAG_DEVICE) (position in daisy chain), JTAG_LENGTH = $(JTAG_LENGTH) (length of daisy chain)"
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -x jtagchain=$(JTAG_UB),$(JTAG_UA),$(JTAG_BB),$(JTAG_BA) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
+endif
 
 # Get size of elf file
 size: $(TARGET).elf
